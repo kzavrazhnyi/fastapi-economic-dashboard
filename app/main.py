@@ -5,6 +5,7 @@ FastAPI додаток для економетричної статистики 
 
 import sys
 import os
+import numpy as np
 
 # Налаштування кодування для Windows (безпечний спосіб)
 if sys.platform == "win32":
@@ -17,17 +18,29 @@ if sys.platform == "win32":
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
 from typing import List, Optional
 from datetime import datetime, date
 import pandas as pd
 from .models import SalesData, InventoryData, ProfitData, TrendData, StatsData
 from .data_generator import DataGenerator
+from .worldbank_client import WorldBankDataProvider
 
 # Ініціалізація FastAPI додатку
 app = FastAPI(
     title="Economic Data Dashboard",
     description="API для економетричної статистики торгівельно-виробничого підприємства",
     version="1.0.0"
+)
+
+# Додаємо CORS middleware для підтримки фронтенду
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Дозволяє всі джерела
+    allow_credentials=True,
+    allow_methods=["*"],  # Дозволяє всі методи (GET, POST, etc.)
+    allow_headers=["*"],  # Дозволяє всі заголовки
 )
 
 # Підключення статичних файлів
@@ -355,18 +368,31 @@ async def get_file_stats(filename: str):
         
         stats = {
             "filename": filename,
-            "total_rows": len(df),
-            "total_columns": len(df.columns),
+            "total_rows": int(len(df)),
+            "total_columns": int(len(df.columns)),
             "columns": df.columns.tolist(),
             "data_types": df.dtypes.astype(str).to_dict(),
-            "memory_usage": df.memory_usage(deep=True).sum(),
-            "null_counts": df.isnull().sum().to_dict()
+            "memory_usage": int(df.memory_usage(deep=True).sum()),
+            "null_counts": {k: int(v) for k, v in df.isnull().sum().to_dict().items()}
         }
         
         # Додаємо статистику для числових колонок
         numeric_columns = df.select_dtypes(include=[np.number]).columns
         if len(numeric_columns) > 0:
-            stats["numeric_stats"] = df[numeric_columns].describe().to_dict()
+            numeric_stats = df[numeric_columns].describe()
+            # Конвертуємо NumPy типи в стандартні Python типи
+            stats["numeric_stats"] = {}
+            for col in numeric_stats.columns:
+                stats["numeric_stats"][col] = {}
+                for stat_name in numeric_stats.index:
+                    value = numeric_stats.loc[stat_name, col]
+                    # Конвертуємо NumPy типи в стандартні Python типи
+                    if isinstance(value, (np.integer, np.int64, np.int32)):
+                        stats["numeric_stats"][col][stat_name] = int(value)
+                    elif isinstance(value, (np.floating, np.float64, np.float32)):
+                        stats["numeric_stats"][col][stat_name] = float(value)
+                    else:
+                        stats["numeric_stats"][col][stat_name] = str(value)
         
         return stats
     
@@ -388,6 +414,256 @@ async def regenerate_data():
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Помилка при регенерації даних: {str(e)}")
+
+
+# Ендпоінти для роботи з даними Світового банку
+@app.get("/api/worldbank/indicators")
+async def get_worldbank_indicators(
+    countries: Optional[str] = Query(None, description="Коди країн через кому (UA,US,DE)"),
+    indicators: Optional[str] = Query(None, description="Показники через кому (GDP,GDP_PER_CAPITA,INFLATION)"),
+    start_year: int = Query(2020, description="Початковий рік"),
+    end_year: int = Query(2023, description="Кінцевий рік")
+):
+    """Отримання економетричних показників зі Світового банку"""
+    try:
+        provider = WorldBankDataProvider()
+        
+        country_list = countries.split(',') if countries else None
+        indicator_list = indicators.split(',') if indicators else None
+        
+        data = await run_in_threadpool(
+            provider.get_economic_indicators,
+            country_codes=country_list,
+            indicators=indicator_list,
+            start_year=start_year,
+            end_year=end_year
+        )
+        
+        return {
+            "data": data.to_dict('records'),
+            "columns": data.columns.tolist(),
+            "total_records": len(data),
+            "countries": data['Country_Name'].unique().tolist() if not data.empty else [],
+            "years": sorted(data['Year'].unique().tolist()) if not data.empty else []
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Помилка отримання даних Світового банку: {str(e)}")
+
+@app.get("/api/worldbank/comparison")
+async def get_country_comparison(
+    countries: str = Query(..., description="Коди країн через кому (UA,US,DE)"),
+    indicator: str = Query("GDP_PER_CAPITA", description="Показник для порівняння"),
+    years: int = Query(10, description="Кількість років для аналізу")
+):
+    """Порівняння країн за конкретним показником"""
+    try:
+        provider = WorldBankDataProvider()
+        
+        country_list = countries.split(',')
+        
+        # Валідація індикатора
+        if indicator not in provider.indicators:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Невідомий індикатор: {indicator}. Доступні: {list(provider.indicators.keys())}"
+            )
+        
+        data = await run_in_threadpool(
+            provider.get_country_comparison,
+            countries=country_list,
+            indicator=indicator,
+            years=years
+        )
+        
+        return {
+            "data": data.to_dict('records'),
+            "indicator": indicator,
+            "countries": country_list,
+            "analysis_years": years,
+            "total_records": len(data)
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Помилка порівняння країн: {str(e)}")
+
+@app.get("/api/worldbank/trends/{country}")
+async def get_country_trends(
+    country: str,
+    indicators: Optional[str] = Query(None, description="Показники через кому (GDP,GDP_PER_CAPITA,INFLATION)"),
+    years: int = Query(20, description="Кількість років для аналізу")
+):
+    """Аналіз трендів для конкретної країни"""
+    try:
+        provider = WorldBankDataProvider()
+        
+        indicator_list = indicators.split(',') if indicators else None
+        
+        analysis = await run_in_threadpool(
+            provider.get_trend_analysis,
+            country=country,
+            indicators=indicator_list,
+            years=years
+        )
+        
+        return analysis
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Помилка аналізу трендів: {str(e)}")
+
+@app.get("/api/worldbank/countries")
+async def get_available_countries():
+    """Отримання списку доступних країн"""
+    try:
+        provider = WorldBankDataProvider()
+        return {
+            "countries": provider.countries,
+            "total_countries": len(provider.countries)
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Помилка отримання списку країн: {str(e)}")
+
+@app.get("/api/worldbank/indicators-list")
+async def get_available_indicators():
+    """Отримання списку доступних показників"""
+    try:
+        provider = WorldBankDataProvider()
+        return {
+            "indicators": provider.indicators,
+            "total_indicators": len(provider.indicators)
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Помилка отримання списку показників: {str(e)}")
+
+@app.get("/api/worldbank/normalized")
+async def get_normalized_data(
+    countries: Optional[str] = Query(None, description="Коди країн через кому (UA,US,DE)"),
+    indicators: Optional[str] = Query(None, description="Показники через кому (GDP,GDP_PER_CAPITA,INFLATION)"),
+    start_year: int = Query(2020, description="Початковий рік"),
+    end_year: int = Query(2023, description="Кінцевий рік"),
+    currency: str = Query("USD", description="Валюта для конвертації")
+):
+    """Отримання нормалізованих економічних показників"""
+    try:
+        provider = WorldBankDataProvider()
+        
+        country_list = countries.split(',') if countries else None
+        indicator_list = indicators.split(',') if indicators else None
+        
+        # Отримуємо сирі дані
+        raw_data = await run_in_threadpool(
+            provider.get_economic_indicators,
+            country_codes=country_list,
+            indicators=indicator_list,
+            start_year=start_year,
+            end_year=end_year
+        )
+        
+        # Нормалізуємо дані
+        normalized_data = provider.normalize_data(raw_data)
+        
+        # Конвертуємо валюту якщо потрібно
+        if currency != "USD":
+            normalized_data = provider.convert_to_usd(normalized_data, currency)
+        
+        # Конвертуємо DataFrame в список словників з правильним кодуванням
+        data_records = []
+        for _, row in normalized_data.iterrows():
+            record = {}
+            for col in normalized_data.columns:
+                value = row[col]
+                # Конвертуємо NumPy типи в стандартні Python типи
+                if isinstance(value, (np.integer, np.int64, np.int32)):
+                    record[col] = int(value)
+                elif isinstance(value, (np.floating, np.float64, np.float32)):
+                    record[col] = float(value)
+                elif isinstance(value, str):
+                    # Переконуємося, що рядок правильно закодований
+                    record[col] = value.encode('utf-8').decode('utf-8')
+                else:
+                    record[col] = str(value)
+            data_records.append(record)
+        
+        return {
+            "data": data_records,
+            "columns": normalized_data.columns.tolist(),
+            "total_records": len(normalized_data),
+            "countries": normalized_data['Country_Name'].unique().tolist() if not normalized_data.empty else [],
+            "years": sorted(normalized_data['Year'].unique().tolist()) if not normalized_data.empty else [],
+            "currency": currency,
+            "normalization_info": {
+                "GDP": "в мільярдах доларів",
+                "GDP_PER_CAPITA": "в доларах",
+                "INFLATION": "відсотки",
+                "UNEMPLOYMENT": "відсотки",
+                "EXPORTS": "в мільярдах доларів",
+                "IMPORTS": "в мільярдах доларів",
+                "POPULATION": "в мільйонах осіб"
+            }
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Помилка нормалізації даних: {str(e)}")
+
+@app.get("/api/worldbank/economic-health")
+async def get_economic_health_analysis(
+    countries: Optional[str] = Query(None, description="Коди країн через кому (UA,US,DE)"),
+    start_year: int = Query(2020, description="Початковий рік"),
+    end_year: int = Query(2023, description="Кінцевий рік")
+):
+    """Аналіз економічного здоров'я країн"""
+    try:
+        provider = WorldBankDataProvider()
+        
+        country_list = countries.split(',') if countries else None
+        
+        # Отримуємо дані для аналізу
+        data = await run_in_threadpool(
+            provider.get_economic_indicators,
+            country_codes=country_list,
+            indicators=['GDP_PER_CAPITA', 'INFLATION', 'UNEMPLOYMENT', 'LIFE_EXPECTANCY'],
+            start_year=start_year,
+            end_year=end_year
+        )
+        
+        # Нормалізуємо дані
+        normalized_data = provider.normalize_data(data)
+        
+        # Аналізуємо економічне здоров'я
+        health_analysis = provider.analyze_economic_health(normalized_data)
+        
+        return {
+            "analysis": health_analysis,
+            "analysis_period": f"{start_year}-{end_year}",
+            "total_countries": len(health_analysis),
+            "methodology": {
+                "GDP_PER_CAPITA": "30% ваги - показник економічного розвитку",
+                "INFLATION": "25% ваги - стабільність цін",
+                "UNEMPLOYMENT": "25% ваги - зайнятість населення",
+                "LIFE_EXPECTANCY": "20% ваги - якість життя"
+            }
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Помилка аналізу економічного здоров'я: {str(e)}")
+
+@app.get("/api/worldbank/currency-rates")
+async def get_currency_rates():
+    """Отримання курсів валют для конвертації"""
+    try:
+        provider = WorldBankDataProvider()
+        rates = provider.get_currency_conversion_rates()
+        
+        return {
+            "rates": rates,
+            "base_currency": "USD",
+            "note": "Курси є приблизними та можуть відрізнятися від реальних"
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Помилка отримання курсів валют: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -221,6 +221,9 @@
                     <div class="chart-title">
                         <i class="fas fa-database me-2"></i>
                         Перегляд файлів даних
+                        <button class="btn btn-sm btn-outline-success ms-2" onclick="loadFilesList()" title="Оновити список файлів">
+                            <i class="fas fa-sync-alt"></i> Оновити
+                        </button>
                     </div>
                     <div id="files-panel">
                         <div class="row">
@@ -237,6 +240,333 @@
                                 </div>
                                 <div id="file-pagination" class="mt-3">
                                     <!-- Пагінація буде тут -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель даних Світового банку -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-globe me-2"></i>
+                        Економетричні дані Світового банку
+                    </div>
+                    <div id="worldbank-panel">
+                        <!-- Фільтри для даних Світового банку -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Країни</label>
+                                <select id="worldbank-countries" class="form-select" multiple>
+                                    <!-- Буде заповнено динамічно -->
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Показники</label>
+                                <select id="worldbank-indicators" class="form-select" multiple>
+                                    <!-- Буде заповнено динамічно -->
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Початковий рік</label>
+                                <input type="number" id="worldbank-start-year" class="form-control" value="2020" min="1960" max="2024">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Кінцевий рік</label>
+                                <input type="number" id="worldbank-end-year" class="form-control" value="2023" min="1960" max="2024">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button class="btn btn-custom w-100" onclick="loadWorldBankData()">
+                                        <i class="fas fa-download me-1"></i>
+                                        Завантажити
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Навігація по розділах -->
+                        <ul class="nav nav-tabs" id="worldbank-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="indicators-tab" data-bs-toggle="tab" data-bs-target="#indicators-content" type="button" role="tab">
+                                    <i class="fas fa-chart-line me-1"></i>
+                                    Показники
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="normalized-tab" data-bs-toggle="tab" data-bs-target="#normalized-content" type="button" role="tab">
+                                    <i class="fas fa-calculator me-1"></i>
+                                    Нормалізовані
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="health-tab" data-bs-toggle="tab" data-bs-target="#health-content" type="button" role="tab">
+                                    <i class="fas fa-heartbeat me-1"></i>
+                                    Економічне здоров'я
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="comparison-tab" data-bs-toggle="tab" data-bs-target="#comparison-content" type="button" role="tab">
+                                    <i class="fas fa-balance-scale me-1"></i>
+                                    Порівняння
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="trends-tab" data-bs-toggle="tab" data-bs-target="#trends-content" type="button" role="tab">
+                                    <i class="fas fa-trending-up me-1"></i>
+                                    Тренди
+                                </button>
+                            </li>
+                        </ul>
+
+                        <!-- Вміст вкладок -->
+                        <div class="tab-content" id="worldbank-tab-content">
+                            <!-- Вкладка показників -->
+                            <div class="tab-pane fade show active" id="indicators-content" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <div id="worldbank-indicators-chart" style="height: 500px;"></div>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <div class="table-responsive">
+                                            <table id="worldbank-indicators-table" class="table table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Країна</th>
+                                                        <th>Рік</th>
+                                                        <th>ВВП</th>
+                                                        <th>ВВП на душу</th>
+                                                        <th>Інфляція</th>
+                                                        <th>Безробіття</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <!-- Дані будуть завантажені тут -->
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Вкладка порівняння -->
+                            <div class="tab-pane fade" id="comparison-content" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-8">
+                                        <div id="worldbank-comparison-chart" style="height: 400px;"></div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Налаштування порівняння</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Показник</label>
+                                                    <select id="comparison-indicator" class="form-select">
+                                                        <option value="GDP_PER_CAPITA">ВВП на душу населення</option>
+                                                        <option value="GDP">ВВП</option>
+                                                        <option value="INFLATION">Інфляція</option>
+                                                        <option value="UNEMPLOYMENT">Безробіття</option>
+                                                        <option value="LIFE_EXPECTANCY">Тривалість життя</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Країни для порівняння</label>
+                                                    <input type="text" id="comparison-countries" class="form-control" placeholder="UA,US,DE,PL" value="UA,US,DE,PL">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Років для аналізу</label>
+                                                    <input type="number" id="comparison-years" class="form-control" value="10" min="5" max="30">
+                                                </div>
+                                                <button class="btn btn-custom w-100" onclick="loadComparisonData()">
+                                                    <i class="fas fa-chart-bar me-1"></i>
+                                                    Порівняти
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Вкладка трендів -->
+                            <div class="tab-pane fade" id="trends-content" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Аналіз трендів</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Країна</label>
+                                                    <select id="trends-country" class="form-select">
+                                                        <option value="UA">Україна</option>
+                                                        <option value="US">США</option>
+                                                        <option value="DE">Німеччина</option>
+                                                        <option value="PL">Польща</option>
+                                                        <option value="CN">Китай</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Показники</label>
+                                                    <select id="trends-indicators" class="form-select" multiple>
+                                                        <option value="GDP">ВВП</option>
+                                                        <option value="GDP_PER_CAPITA">ВВП на душу</option>
+                                                        <option value="INFLATION">Інфляція</option>
+                                                        <option value="UNEMPLOYMENT">Безробіття</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Років для аналізу</label>
+                                                    <input type="number" id="trends-years" class="form-control" value="20" min="5" max="50">
+                                                </div>
+                                                <button class="btn btn-custom w-100" onclick="loadTrendsData()">
+                                                    <i class="fas fa-trending-up me-1"></i>
+                                                    Аналізувати
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div id="worldbank-trends-chart" style="height: 500px;"></div>
+                                        <div id="trends-analysis" class="mt-3">
+                                            <!-- Результати аналізу будуть тут -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Вкладка нормалізованих даних -->
+                            <div class="tab-pane fade" id="normalized-content" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-calculator me-2"></i>
+                                                    Нормалізація даних
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Країни</label>
+                                                    <select id="normalized-countries" class="form-select" multiple>
+                                                        <option value="UA">Україна</option>
+                                                        <option value="US">США</option>
+                                                        <option value="DE">Німеччина</option>
+                                                        <option value="PL">Польща</option>
+                                                        <option value="FR">Франція</option>
+                                                        <option value="GB">Великобританія</option>
+                                                        <option value="CN">Китай</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Показники</label>
+                                                    <select id="normalized-indicators" class="form-select" multiple>
+                                                        <option value="GDP">ВВП</option>
+                                                        <option value="GDP_PER_CAPITA">ВВП на душу</option>
+                                                        <option value="INFLATION">Інфляція</option>
+                                                        <option value="UNEMPLOYMENT">Безробіття</option>
+                                                        <option value="EXPORTS">Експорт</option>
+                                                        <option value="IMPORTS">Імпорт</option>
+                                                        <option value="POPULATION">Населення</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Валюта</label>
+                                                    <select id="normalized-currency" class="form-select">
+                                                        <option value="USD">Долар США</option>
+                                                        <option value="EUR">Євро</option>
+                                                        <option value="UAH">Гривня</option>
+                                                        <option value="PLN">Злотий</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Початковий рік</label>
+                                                    <input type="number" id="normalized-start-year" class="form-control" value="2020" min="2000" max="2023">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Кінцевий рік</label>
+                                                    <input type="number" id="normalized-end-year" class="form-control" value="2023" min="2000" max="2023">
+                                                </div>
+                                                <button class="btn btn-custom w-100" onclick="loadNormalizedData()">
+                                                    <i class="fas fa-calculator me-1"></i>
+                                                    Нормалізувати дані
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div id="normalized-chart" style="height: 500px;"></div>
+                                        <div id="normalized-table" class="mt-3">
+                                            <!-- Таблиця нормалізованих даних -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Вкладка аналізу економічного здоров'я -->
+                            <div class="tab-pane fade" id="health-content" role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-heartbeat me-2"></i>
+                                                    Аналіз економічного здоров'я
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Країни для аналізу</label>
+                                                    <select id="health-countries" class="form-select" multiple>
+                                                        <option value="UA">Україна</option>
+                                                        <option value="US">США</option>
+                                                        <option value="DE">Німеччина</option>
+                                                        <option value="PL">Польща</option>
+                                                        <option value="FR">Франція</option>
+                                                        <option value="GB">Великобританія</option>
+                                                        <option value="CN">Китай</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Початковий рік</label>
+                                                    <input type="number" id="health-start-year" class="form-control" value="2020" min="2000" max="2023">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Кінцевий рік</label>
+                                                    <input type="number" id="health-end-year" class="form-control" value="2023" min="2000" max="2023">
+                                                </div>
+                                                <button class="btn btn-custom w-100" onclick="loadEconomicHealth()">
+                                                    <i class="fas fa-heartbeat me-1"></i>
+                                                    Аналізувати здоров'я
+                                                </button>
+                                                <div class="mt-3">
+                                                    <small class="text-muted">
+                                                        <strong>Методологія:</strong><br>
+                                                        • ВВП на душу: 30%<br>
+                                                        • Інфляція: 25%<br>
+                                                        • Безробіття: 25%<br>
+                                                        • Тривалість життя: 20%
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div id="health-chart" style="height: 500px;"></div>
+                                        <div id="health-analysis" class="mt-3">
+                                            <!-- Результати аналізу економічного здоров'я -->
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -309,8 +639,26 @@
 
         // Ініціалізація сторінки
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM завантажено');
             loadInitialData();
             setupDateFilters();
+            initializeWorldBankData(); // Додаємо ініціалізацію даних Світового банку
+            
+            // Завантажуємо файли безпосередньо
+            console.log('Запуск завантаження файлів...');
+            window.loadFilesList = loadFilesList;
+            window.loadFileContent = loadFileContent;
+            window.showFileStats = showFileStats;
+            window.applyFilters = applyFilters;
+            window.clearFilters = clearFilters;
+            window.regenerateData = regenerateData;
+            
+            window.loadWorldBankData = loadWorldBankData;
+            window.loadComparisonData = loadComparisonData;
+            window.loadTrendsData = loadTrendsData;
+            window.loadNormalizedData = loadNormalizedData;
+            window.loadEconomicHealth = loadEconomicHealth;
+
             loadFilesList();
         });
 
@@ -623,6 +971,26 @@
             setTimeout(() => successDiv.remove(), 3000);
         }
 
+        
+
+
+        // Функція для отримання назви показника
+        function getIndicatorName(indicator) {
+            const names = {
+                'GDP': 'ВВП',
+                'GDP_PER_CAPITA': 'ВВП на душу',
+                'INFLATION': 'Інфляція',
+                'UNEMPLOYMENT': 'Безробіття',
+                'EXPORTS': 'Експорт',
+                'IMPORTS': 'Імпорт',
+                'POPULATION': 'Населення',
+                'LIFE_EXPECTANCY': 'Тривалість життя',
+                'INTERNET_USERS': 'Користувачі інтернету',
+                'EDUCATION_EXPENDITURE': 'Витрати на освіту'
+            };
+            return names[indicator] || indicator;
+        }
+
         // Функції для роботи з файлами
         let currentFile = null;
         let currentOffset = 0;
@@ -630,6 +998,7 @@
 
         async function loadFilesList() {
             try {
+                console.log('Завантаження списку файлів...');
                 const response = await fetch('/api/files');
                 
                 if (!response.ok) {
@@ -637,11 +1006,18 @@
                 }
                 
                 const result = await response.json();
+                console.log('Отримані файли:', result);
                 
                 const filesList = document.getElementById('files-list');
+                if (!filesList) {
+                    console.error('Елемент files-list не знайдено!');
+                    return;
+                }
+                
                 filesList.innerHTML = '';
                 
                 if (result.files && Array.isArray(result.files)) {
+                    console.log('Обробка файлів:', result.files.length);
                     result.files.forEach(file => {
                     const fileItem = document.createElement('div');
                     fileItem.className = 'list-group-item list-group-item-action';
@@ -663,8 +1039,10 @@
                     filesList.appendChild(fileItem);
                 });
                 } else {
+                    console.log('Немає файлів для відображення');
                     filesList.innerHTML = '<div class="list-group-item text-muted">Файли не знайдені</div>';
                 }
+                console.log('Завантаження файлів завершено');
             } catch (error) {
                 console.error('Помилка завантаження списку файлів:', error);
                 showError('Помилка завантаження списку файлів: ' + error.message);
@@ -883,6 +1261,644 @@
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Функції для роботи з даними Світового банку
+        let worldBankData = null;
+        let availableCountries = {};
+        let availableIndicators = {};
+
+        // Ініціалізація даних Світового банку
+        async function initializeWorldBankData() {
+            try {
+                // Завантажуємо списки країн та показників
+                const [countriesResponse, indicatorsResponse] = await Promise.all([
+                    fetch('/api/worldbank/countries'),
+                    fetch('/api/worldbank/indicators-list')
+                ]);
+
+                const countriesData = await countriesResponse.json();
+                const indicatorsData = await indicatorsResponse.json();
+
+                availableCountries = countriesData.countries;
+                availableIndicators = indicatorsData.indicators;
+
+                // Заповнюємо селекти
+                populateWorldBankSelects();
+
+            } catch (error) {
+                console.error('Помилка ініціалізації даних Світового банку:', error);
+                showError('Помилка завантаження списків країн та показників');
+            }
+        }
+
+        function populateWorldBankSelects() {
+            // Заповнюємо селект країн
+            const countriesSelect = document.getElementById('worldbank-countries');
+            countriesSelect.innerHTML = '';
+            
+            Object.entries(availableCountries).forEach(([code, name]) => {
+                const option = document.createElement('option');
+                option.value = code;
+                option.textContent = `${name} (${code})`;
+                countriesSelect.appendChild(option);
+            });
+
+            // Заповнюємо селект показників
+            const indicatorsSelect = document.getElementById('worldbank-indicators');
+            indicatorsSelect.innerHTML = '';
+            
+            Object.entries(availableIndicators).forEach(([key, code]) => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = key.replace(/_/g, ' ');
+                indicatorsSelect.appendChild(option);
+            });
+        }
+
+        async function loadWorldBankData() {
+            try {
+                const countries = Array.from(document.getElementById('worldbank-countries').selectedOptions)
+                    .map(option => option.value);
+                const indicators = Array.from(document.getElementById('worldbank-indicators').selectedOptions)
+                    .map(option => option.value);
+                const startYear = document.getElementById('worldbank-start-year').value;
+                const endYear = document.getElementById('worldbank-end-year').value;
+
+                const params = new URLSearchParams();
+                if (countries.length > 0) params.append('countries', countries.join(','));
+                if (indicators.length > 0) params.append('indicators', indicators.join(','));
+                params.append('start_year', startYear);
+                params.append('end_year', endYear);
+
+                const response = await fetch(`/api/worldbank/indicators?${params}`);
+                const result = await response.json();
+
+                worldBankData = result;
+                updateWorldBankIndicatorsChart(result);
+                updateWorldBankIndicatorsTable(result);
+
+            } catch (error) {
+                console.error('Помилка завантаження даних Світового банку:', error);
+                showError('Помилка завантаження даних Світового банку: ' + error.message);
+            }
+        }
+
+        function updateWorldBankIndicatorsChart(data) {
+            if (!data.data || data.data.length === 0) {
+                document.getElementById('worldbank-indicators-chart').innerHTML = '<p class="text-muted">Немає даних для відображення</p>';
+                return;
+            }
+
+            // Групуємо дані за країнами та роками
+            const chartData = {};
+            data.data.forEach(row => {
+                const country = row.Country_Name;
+                const year = row.Year;
+                
+                if (!chartData[country]) {
+                    chartData[country] = {};
+                }
+                chartData[country][year] = row;
+            });
+
+            // Створюємо графік
+            const traces = [];
+            Object.entries(chartData).forEach(([country, years]) => {
+                const sortedYears = Object.keys(years).sort();
+                const gdpData = sortedYears.map(year => years[year].GDP || 0);
+                
+                traces.push({
+                    x: sortedYears,
+                    y: gdpData,
+                    name: country,
+                    type: 'scatter',
+                    mode: 'lines+markers'
+                });
+            });
+
+            const layout = {
+                title: 'ВВП країн у часі',
+                xaxis: { title: 'Рік' },
+                yaxis: { title: 'ВВП (долари США)' },
+                hovermode: 'closest'
+            };
+
+            Plotly.newPlot('worldbank-indicators-chart', traces, layout);
+        }
+
+        function updateWorldBankIndicatorsTable(data) {
+            const tbody = document.querySelector('#worldbank-indicators-table tbody');
+            tbody.innerHTML = '';
+
+            if (!data.data || data.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Немає даних для відображення</td></tr>';
+                return;
+            }
+
+            data.data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.Country_Name}</td>
+                    <td>${row.Year}</td>
+                    <td>${row.GDP ? row.GDP.toLocaleString() : '-'}</td>
+                    <td>${row.GDP_PER_CAPITA ? row.GDP_PER_CAPITA.toLocaleString() : '-'}</td>
+                    <td>${row.INFLATION ? row.INFLATION.toFixed(2) + '%' : '-'}</td>
+                    <td>${row.UNEMPLOYMENT ? row.UNEMPLOYMENT.toFixed(2) + '%' : '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function loadComparisonData() {
+            try {
+                const countries = document.getElementById('comparison-countries').value;
+                const indicator = document.getElementById('comparison-indicator').value;
+                const years = document.getElementById('comparison-years').value;
+
+                const params = new URLSearchParams();
+                params.append('countries', countries);
+                params.append('indicator', indicator);
+                params.append('years', years);
+
+                const response = await fetch(`/api/worldbank/comparison?${params}`);
+                const result = await response.json();
+
+                updateComparisonChart(result);
+
+            } catch (error) {
+                console.error('Помилка завантаження даних порівняння:', error);
+                showError('Помилка завантаження даних порівняння: ' + error.message);
+            }
+        }
+
+        function updateComparisonChart(data) {
+            if (!data.data || data.data.length === 0) {
+                document.getElementById('worldbank-comparison-chart').innerHTML = '<p class="text-muted">Немає даних для відображення</p>';
+                return;
+            }
+
+            // Групуємо дані за країнами
+            const chartData = {};
+            data.data.forEach(row => {
+                const country = row.Country_Name;
+                if (!chartData[country]) {
+                    chartData[country] = [];
+                }
+                chartData[country].push({
+                    year: row.Year,
+                    value: row.Value
+                });
+            });
+
+            // Створюємо графік
+            const traces = [];
+            Object.entries(chartData).forEach(([country, values]) => {
+                const sortedValues = values.sort((a, b) => a.year - b.year);
+                
+                traces.push({
+                    x: sortedValues.map(v => v.year),
+                    y: sortedValues.map(v => v.value),
+                    name: country,
+                    type: 'scatter',
+                    mode: 'lines+markers'
+                });
+            });
+
+            const layout = {
+                title: `Порівняння країн: ${data.indicator}`,
+                xaxis: { title: 'Рік' },
+                yaxis: { title: 'Значення' },
+                hovermode: 'closest'
+            };
+
+            Plotly.newPlot('worldbank-comparison-chart', traces, layout);
+        }
+
+        async function loadTrendsData() {
+            try {
+                const country = document.getElementById('trends-country').value;
+                const indicators = Array.from(document.getElementById('trends-indicators').selectedOptions)
+                    .map(option => option.value);
+                const years = document.getElementById('trends-years').value;
+
+                const params = new URLSearchParams();
+                if (indicators.length > 0) params.append('indicators', indicators.join(','));
+                params.append('years', years);
+
+                const response = await fetch(`/api/worldbank/trends/${country}?${params}`);
+                const result = await response.json();
+
+                updateTrendsChart(result);
+                updateTrendsAnalysis(result);
+
+            } catch (error) {
+                console.error('Помилка завантаження даних трендів:', error);
+                showError('Помилка завантаження даних трендів: ' + error.message);
+            }
+        }
+
+        function updateTrendsChart(data) {
+            if (!data.raw_data || data.raw_data.length === 0) {
+                document.getElementById('worldbank-trends-chart').innerHTML = '<p class="text-muted">Немає даних для відображення</p>';
+                return;
+            }
+
+            // Створюємо графік з кількома показниками
+            const traces = [];
+            const indicators = Object.keys(data.trends || {});
+            
+            indicators.forEach(indicator => {
+                const values = data.raw_data
+                    .filter(row => row[indicator] !== null && row[indicator] !== undefined)
+                    .sort((a, b) => a.Year - b.Year);
+                
+                if (values.length > 0) {
+                    traces.push({
+                        x: values.map(v => v.Year),
+                        y: values.map(v => v[indicator]),
+                        name: indicator.replace(/_/g, ' '),
+                        type: 'scatter',
+                        mode: 'lines+markers',
+                        yaxis: 'y' + (traces.length > 0 ? traces.length + 1 : '')
+                    });
+                }
+            });
+
+            const layout = {
+                title: `Тренди для ${data.country}`,
+                xaxis: { title: 'Рік' },
+                hovermode: 'closest'
+            };
+
+            // Додаємо осі для кожного показника
+            indicators.forEach((indicator, index) => {
+                if (index > 0) {
+                    layout[`yaxis${index + 1}`] = {
+                        title: indicator.replace(/_/g, ' '),
+                        overlaying: 'y',
+                        side: 'right'
+                    };
+                } else {
+                    layout.yaxis = {
+                        title: indicator.replace(/_/g, ' ')
+                    };
+                }
+            });
+
+            Plotly.newPlot('worldbank-trends-chart', traces, layout);
+        }
+
+        function updateTrendsAnalysis(data) {
+            const analysisDiv = document.getElementById('trends-analysis');
+            
+            if (!data.trends || Object.keys(data.trends).length === 0) {
+                analysisDiv.innerHTML = '<p class="text-muted">Немає даних для аналізу</p>';
+                return;
+            }
+
+            let analysisHtml = `
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Аналіз трендів для ${data.country}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+            `;
+
+            Object.entries(data.trends).forEach(([indicator, trend]) => {
+                const directionClass = trend.direction === 'зростання' ? 'text-success' : 'text-danger';
+                const directionIcon = trend.direction === 'зростання' ? 'fa-arrow-up' : 'fa-arrow-down';
+                
+                analysisHtml += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title">${indicator.replace(/_/g, ' ')}</h6>
+                                <p class="card-text">
+                                    <i class="fas ${directionIcon} ${directionClass} me-1"></i>
+                                    <strong>Тренд:</strong> <span class="${directionClass}">${trend.direction}</span><br>
+                                    <strong>Останнє значення:</strong> ${trend.latest_value?.toLocaleString() || 'N/A'}<br>
+                                    <strong>Років проаналізовано:</strong> ${trend.years_analyzed}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            analysisHtml += `
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                Період аналізу: ${data.analysis_period}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            analysisDiv.innerHTML = analysisHtml;
+        }
+        
+        // Функція для завантаження нормалізованих даних
+        async function loadNormalizedData() {
+            console.log('Запуск loadNormalizedData...');
+            const countries = Array.from(document.getElementById('normalized-countries').selectedOptions).map(option => option.value);
+            const indicators = Array.from(document.getElementById('normalized-indicators').selectedOptions).map(option => option.value);
+            const currency = document.getElementById('normalized-currency').value;
+            const startYear = document.getElementById('normalized-start-year').value;
+            const endYear = document.getElementById('normalized-end-year').value;
+            
+            console.log('Параметри:', { countries, indicators, currency, startYear, endYear });
+            
+            if (countries.length === 0 || indicators.length === 0) {
+                showError('Будь ласка, оберіть країни та показники');
+                return;
+            }
+            
+            try {
+                showLoading();
+                
+                const params = new URLSearchParams({
+                    countries: countries.join(','),
+                    indicators: indicators.join(','),
+                    start_year: startYear,
+                    end_year: endYear,
+                    currency: currency
+                });
+                
+                const response = await fetch(`/api/worldbank/normalized?${params}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    console.log('Отримані дані:', result);
+                    updateNormalizedChart(result.data, result.normalization_info, currency);
+                    updateNormalizedTable(result.data, result.normalization_info);
+                } else {
+                    console.error('Помилка відповіді:', result);
+                    showError(result.detail || 'Помилка завантаження нормалізованих даних');
+                }
+            } catch (error) {
+                showError('Помилка завантаження нормалізованих даних: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Функція для оновлення графіка нормалізованих даних
+        function updateNormalizedChart(data, normalizationInfo, currency) {
+            console.log('updateNormalizedChart викликано з:', { data, normalizationInfo, currency });
+            
+            if (!data || data.length === 0) {
+                console.log('Дані порожні, показуємо порожній графік');
+                Plotly.newPlot('normalized-chart', [], {}, {responsive: true});
+                return;
+            }
+            
+            const traces = [];
+            const countries = [...new Set(data.map(item => item.Country_Name))];
+            const indicators = Object.keys(normalizationInfo);
+            
+            console.log('Країни:', countries);
+            console.log('Показники:', indicators);
+            
+            indicators.forEach(indicator => {
+                if (indicator === 'Country' || indicator === 'Country_Name' || indicator === 'Year') return;
+                
+                const trace = {
+                    x: countries,
+                    y: countries.map(country => {
+                        const countryData = data.find(item => item.Country_Name === country);
+                        return countryData ? countryData[indicator] : null;
+                    }),
+                    type: 'bar',
+                    name: getIndicatorName(indicator),
+                    text: countries.map(country => {
+                        const countryData = data.find(item => item.Country_Name === country);
+                        return countryData ? `${countryData[indicator]} ${normalizationInfo[indicator]}` : '';
+                    }),
+                    textposition: 'auto'
+                };
+                
+                traces.push(trace);
+            });
+            
+            console.log('Створені traces:', traces);
+            
+            const layout = {
+                title: `Нормалізовані економічні показники (${currency})`,
+                xaxis: { title: 'Країни' },
+                yaxis: { title: 'Значення' },
+                barmode: 'group',
+                responsive: true
+            };
+            
+            Plotly.newPlot('normalized-chart', traces, layout, {responsive: true});
+        }
+        
+        // Функція для оновлення таблиці нормалізованих даних
+        function updateNormalizedTable(data, normalizationInfo) {
+            const tableDiv = document.getElementById('normalized-table');
+            
+            if (!data || data.length === 0) {
+                tableDiv.innerHTML = '<div class="alert alert-warning">Немає даних для відображення</div>';
+                return;
+            }
+            
+            let html = '<div class="card"><div class="card-header"><h6 class="mb-0">Нормалізовані дані</h6></div><div class="card-body"><div class="table-responsive"><table class="table table-striped"><thead><tr>';
+            
+            // Заголовки таблиці
+            html += '<th>Країна</th><th>Рік</th>';
+            Object.keys(normalizationInfo).forEach(indicator => {
+                html += `<th>${getIndicatorName(indicator)} (${normalizationInfo[indicator]})</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            // Дані таблиці
+            data.forEach(row => {
+                html += `<tr><td>${row.Country_Name}</td><td>${row.Year}</td>`;
+                Object.keys(normalizationInfo).forEach(indicator => {
+                    const value = row[indicator] !== null ? row[indicator].toFixed(2) : 'N/A';
+                    html += `<td>${value}</td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table></div></div></div>';
+            tableDiv.innerHTML = html;
+        }
+        
+        // Функція для завантаження аналізу економічного здоров'я
+        async function loadEconomicHealth() {
+            const countries = Array.from(document.getElementById('health-countries').selectedOptions).map(option => option.value);
+            const startYear = document.getElementById('health-start-year').value;
+            const endYear = document.getElementById('health-end-year').value;
+            
+            if (countries.length === 0) {
+                showError('Будь ласка, оберіть країни для аналізу');
+                return;
+            }
+            
+            try {
+                showLoading();
+                
+                const params = new URLSearchParams({
+                    countries: countries.join(','),
+                    start_year: startYear,
+                    end_year: endYear
+                });
+                
+                const response = await fetch(`/api/worldbank/economic-health?${params}`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    updateHealthChart(result.analysis);
+                    updateHealthAnalysis(result.analysis, result.methodology);
+                } else {
+                    showError(result.detail || "Помилка аналізу економічного здоров'я");
+                }
+            } catch (error) {
+                showError("Помилка аналізу економічного здоров'я: " + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Функція для оновлення графіка економічного здоров'я
+        function updateHealthChart(analysis) {
+            if (!analysis || Object.keys(analysis).length === 0) {
+                Plotly.newPlot('health-chart', [], {}, {responsive: true});
+                return;
+            }
+            
+            const countries = Object.keys(analysis).map(code => analysis[code].country_name);
+            const scores = Object.keys(analysis).map(code => analysis[code].health_score);
+            const levels = Object.keys(analysis).map(code => analysis[code].health_level);
+            
+            // Кольори залежно від рівня здоров'я
+            const colors = levels.map(level => {
+                switch(level) {
+                    case 'Відмінний': return '#28a745';
+                    case 'Добрий': return '#17a2b8';
+                    case 'Середній': return '#ffc107';
+                    case 'Поганий': return '#fd7e14';
+                    case 'Критичний': return '#dc3545';
+                    default: return '#6c757d';
+                }
+            });
+            
+            const trace = {
+                x: countries,
+                y: scores,
+                type: 'bar',
+                marker: { color: colors },
+                text: levels,
+                textposition: 'auto'
+            };
+            
+            const layout = {
+                title: "Індекс економічного здоров'я країн",
+                xaxis: { title: 'Країни' },
+                yaxis: { title: 'Бал (0-100)', range: [0, 100] },
+                responsive: true
+            };
+            
+            Plotly.newPlot('health-chart', [trace], layout, {responsive: true});
+        }
+        
+        // Функція для оновлення аналізу економічного здоров'я
+        function updateHealthAnalysis(analysis, methodology) {
+            const analysisDiv = document.getElementById('health-analysis');
+            
+            if (!analysis || Object.keys(analysis).length === 0) {
+                analysisDiv.innerHTML = '<div class="alert alert-warning">Немає даних для аналізу</div>';
+                return;
+            }
+            
+            let html = '<div class="row">';
+            
+            // Сортуємо країни за балом
+            const sortedCountries = Object.keys(analysis).sort((a, b) => analysis[b].health_score - analysis[a].health_score);
+            
+            sortedCountries.forEach(countryCode => {
+                const country = analysis[countryCode];
+                const levelClass = getHealthLevelClass(country.health_level);
+                
+                html += `
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">${country.country_name}</h6>
+                                <span class="badge ${levelClass}">${country.health_level}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <strong>Загальний бал:</strong> ${country.health_score}/100
+                                </div>
+                                <div class="progress mb-2" style="height: 20px;">
+                                    <div class="progress-bar ${levelClass.replace('bg-', 'bg-')}" 
+                                         style="width: ${country.health_score}%">
+                                        ${country.health_score}%
+                                    </div>
+                                </div>
+                                <div class="small">
+                `;
+                
+                // Показники
+                Object.entries(country.indicators).forEach(([indicator, data]) => {
+                    html += `
+                        <div class="d-flex justify-content-between">
+                            <span>${getIndicatorName(indicator)}:</span>
+                            <span>${data.value.toFixed(2)} (${data.score}/100)</span>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            // Додаємо методологію
+            html += `
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">Методологія оцінки</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+            `;
+            
+            Object.entries(methodology).forEach(([indicator, description]) => {
+                html += `
+                    <div class="col-md-6 mb-2">
+                        <strong>${getIndicatorName(indicator)}:</strong> ${description}
+                    </div>
+                `;
+            });
+            
+            html += '</div></div></div>';
+            
+            analysisDiv.innerHTML = html;
+        }
+        
+        // Допоміжна функція для отримання класу CSS для рівня здоров'я
+        function getHealthLevelClass(level) {
+            switch(level) {
+                case 'Excellent': return 'bg-success';
+                case 'Good': return 'bg-info';
+                case 'Medium': return 'bg-warning';
+                case 'Poor': return 'bg-danger';
+                case 'Critical': return 'bg-dark';
+                case 'No Data': return 'bg-secondary';
+                default: return 'bg-secondary';
+            }
         }
     </script>
 </body>

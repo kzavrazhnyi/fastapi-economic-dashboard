@@ -19,3 +19,7 @@ python-multipart>=0.0.5
 
 # Для продакшену
 gunicorn>=21.0.0
+
+# API клієнти
+requests>=2.31.0
+wbgapi>=1.0.0
