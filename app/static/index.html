@@ -378,12 +378,12 @@
                         Економетричні дані Світового банку
                     </div>
                     <div id="worldbank-panel">
-                        <!-- Статус даних Світового банку -->
-                        <div class="alert alert-info d-flex align-items-center mb-3" id="worldbank-status-alert" style="display: none;" aria-live="polite" aria-atomic="true">
+                        <!-- Загальний статус API Світового банку -->
+                        <div class="alert alert-info d-flex align-items-center mb-3" id="worldbank-api-status-alert" aria-live="polite" aria-atomic="true">
                             <i class="fas fa-info-circle me-2"></i>
                             <div>
-                                <strong>Підказка:</strong> <span id="worldbank-status-text">Натисніть "Завантажити"</span>
-                                <small class="d-block text-muted" id="worldbank-status-details">Оберіть країни, показники та період</small>
+                                <strong>API Статус:</strong> <span id="worldbank-api-status-text">Перевірка...</span>
+                                <small class="d-block text-muted" id="worldbank-api-status-details">Тестуємо підключення до Світового банку</small>
                             </div>
                         </div>
                         
@@ -426,6 +426,15 @@
                         <div class="tab-content" id="worldbank-tab-content">
                             <!-- Вкладка показників -->
                             <div class="tab-pane fade show active" id="indicators-content" role="tabpanel">
+                                    <!-- Статус для вкладки Показники -->
+                                    <div class="alert alert-light d-flex align-items-center mb-3" id="indicators-status-alert" style="display: none;">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <div>
+                                            <strong>Підказка:</strong> <span id="indicators-status-text">Натисніть "Завантажити"</span>
+                                            <small class="d-block text-muted" id="indicators-status-details">Оберіть країни, показники та період</small>
+                                        </div>
+                                    </div>
+                                    
                                     <!-- Фільтри для показників Світового банку -->
                                     <div class="row mb-3">
                                         <div class="col-md-3">
@@ -491,6 +500,15 @@
 
                             <!-- Вкладка порівняння -->
                             <div class="tab-pane fade" id="comparison-content" role="tabpanel">
+                                    <!-- Статус для вкладки Порівняння -->
+                                    <div class="alert alert-light d-flex align-items-center mb-3" id="comparison-status-alert" style="display: none;">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <div>
+                                            <strong>Підказка:</strong> <span id="comparison-status-text">Натисніть "Порівняти"</span>
+                                            <small class="d-block text-muted" id="comparison-status-details">Оберіть показник, країни та років для аналізу</small>
+                                        </div>
+                                    </div>
+                                    
                                 <div class="row mt-3">
                                     <div class="col-md-8">
                                         <div id="worldbank-comparison-chart" style="height: 400px;"></div>
@@ -531,6 +549,15 @@
 
                             <!-- Вкладка трендів -->
                             <div class="tab-pane fade" id="trends-content" role="tabpanel">
+                                    <!-- Статус для вкладки Тренди -->
+                                    <div class="alert alert-light d-flex align-items-center mb-3" id="trends-status-alert" style="display: none;">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <div>
+                                            <strong>Підказка:</strong> <span id="trends-status-text">Натисніть "Аналізувати"</span>
+                                            <small class="d-block text-muted" id="trends-status-details">Оберіть країну, показники та років для аналізу</small>
+                                        </div>
+                                    </div>
+                                    
                                 <div class="row mt-3">
                                     <div class="col-md-4">
                                         <div class="card">
@@ -579,6 +606,15 @@
                             
                             <!-- Вкладка нормалізованих даних -->
                             <div class="tab-pane fade" id="normalized-content" role="tabpanel">
+                                    <!-- Статус для вкладки Нормалізовані -->
+                                    <div class="alert alert-light d-flex align-items-center mb-3" id="normalized-status-alert" style="display: none;">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <div>
+                                            <strong>Підказка:</strong> <span id="normalized-status-text">Натисніть "Нормалізувати дані"</span>
+                                            <small class="d-block text-muted" id="normalized-status-details">Оберіть країни, показники, валюту та період</small>
+                                        </div>
+                                    </div>
+                                    
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="card">
@@ -648,6 +684,15 @@
                             
                             <!-- Вкладка аналізу економічного здоров'я -->
                             <div class="tab-pane fade" id="health-content" role="tabpanel">
+                                    <!-- Статус для вкладки Економічне здоров'я -->
+                                    <div class="alert alert-light d-flex align-items-center mb-3" id="health-status-alert" style="display: none;">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <div>
+                                            <strong>Підказка:</strong> <span id="health-status-text">Натисніть "Аналізувати здоров'я"</span>
+                                            <small class="d-block text-muted" id="health-status-details">Оберіть країни та період для аналізу економічного здоров'я</small>
+                                        </div>
+                                    </div>
+                                    
                                 <div class="row">
                                     <div class="col-md-4">
                                         <div class="card">
@@ -727,6 +772,12 @@
             loadInitialData();
             setupDateFilters();
             initializeWorldBankData(); // Додаємо ініціалізацію даних Світового банку
+            
+            // Показуємо підказки для всіх вкладок
+            showTabHints();
+            
+            // Перевіряємо стан API при завантаженні
+            checkAPIStatus();
             
             // Завантажуємо файли безпосередньо
             console.log('Запуск завантаження файлів...');
@@ -1520,7 +1571,6 @@
 
         async function loadWorldBankData() {
             try {
-                showWorldBankStatus('info', 'Завантаження...', 'Відправляємо запит до API');
                 const countries = Array.from(document.getElementById('worldbank-countries').selectedOptions)
                     .map(option => option.value);
                 const indicators = Array.from(document.getElementById('worldbank-indicators').selectedOptions)
@@ -1530,25 +1580,29 @@
 
                 // Валідація вибору
                 if (countries.length === 0 && indicators.length === 0) {
-                    showWorldBankStatus('warning', 'Потрібні параметри', 'Оберіть принаймні одну країну і один показник');
+                    showTabStatus('indicators', 'error', 'Оберіть параметри', 'Оберіть принаймні одну країну і один показник');
                     showError('Оберіть країни та показники для завантаження');
                     return;
                 }
                 if (countries.length === 0) {
-                    showWorldBankStatus('warning', 'Потрібні параметри', 'Оберіть принаймні одну країну');
+                    showTabStatus('indicators', 'error', 'Оберіть країни', 'Оберіть принаймні одну країну');
                     showError('Оберіть хоча б одну країну');
                     return;
                 }
                 if (indicators.length === 0) {
-                    showWorldBankStatus('warning', 'Потрібні параметри', 'Оберіть принаймні один показник');
+                    showTabStatus('indicators', 'error', 'Оберіть показники', 'Оберіть принаймні один показник');
                     showError('Оберіть хоча б один показник');
                     return;
                 }
                 if (!startYear || !endYear || Number(startYear) > Number(endYear)) {
-                    showWorldBankStatus('warning', 'Невірний період', 'Перевірте значення років');
+                    showTabStatus('indicators', 'error', 'Невірний період', 'Перевірте значення років');
                     showError('Невірний період: перевірте роки початку та завершення');
                     return;
                 }
+
+                // Показуємо статус завантаження після валідації
+                showWorldBankStatus('info', 'Завантаження...', 'Відправляємо запит до API');
+                showTabStatus('indicators', 'info', 'Завантаження...', 'Відправляємо запит до API');
 
                 const params = new URLSearchParams();
                 if (countries.length > 0) params.append('countries', countries.join(','));
@@ -1570,11 +1624,17 @@
                     const firstItem = rows[0];
                     if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
                         showWorldBankStatus('warning', 
-                            'Використовуються зразкові дані', 
+                            'API недоступний', 
+                            'Використовуються зразкові дані для демонстрації');
+                        showTabStatus('indicators', 'success', 
+                            'Дані завантажено', 
                             `Отримано записів: ${count}`);
                     } else {
                         showWorldBankStatus('success', 
-                            'Дані з API Світового банку', 
+                            'API працює', 
+                            'Дані успішно отримано з Світового банку');
+                        showTabStatus('indicators', 'success', 
+                            'Дані завантажено', 
                             `Отримано записів: ${count}`);
                     }
                 }
@@ -1582,7 +1642,8 @@
             } catch (error) {
                 console.error('Помилка завантаження даних Світового банку:', error);
                 showError('Помилка завантаження даних Світового банку: ' + error.message);
-                showWorldBankStatus('error', 'Помилка завантаження', error.message || 'Невідома помилка');
+                showWorldBankStatus('error', 'Помилка API', 'Не вдалося отримати дані з Світового банку');
+                showTabStatus('indicators', 'error', 'Помилка завантаження', 'Не вдалося завантажити дані показників');
             }
         }
 
@@ -1679,6 +1740,21 @@
                 const indicator = document.getElementById('comparison-indicator').value;
                 const years = document.getElementById('comparison-years').value;
 
+                // Перевіряємо чи вибрані необхідні фільтри
+                if (!countries) {
+                    showTabStatus('comparison', 'error', 'Оберіть країни', 'Для порівняння потрібно вибрати принаймні дві країни');
+                    return;
+                }
+
+                if (!indicator) {
+                    showTabStatus('comparison', 'error', 'Оберіть показник', 'Для порівняння потрібно вибрати показник');
+                    return;
+                }
+
+                // Показуємо статус завантаження
+                showWorldBankStatus('info', 'Завантаження...', 'Отримуємо дані для порівняння країн...');
+                showTabStatus('comparison', 'info', 'Завантаження...', 'Отримуємо дані для порівняння країн...');
+
                 const params = new URLSearchParams();
                 params.append('countries', countries);
                 params.append('indicator', indicator);
@@ -1688,10 +1764,20 @@
                 const result = await response.json();
 
                 updateComparisonChart(result);
+                
+                if (result.data && result.data.length > 0) {
+                    showWorldBankStatus('success', 'API працює', 'Дані успішно отримано з Світового банку');
+                    showTabStatus('comparison', 'success', 'Порівняння завершено', `Проаналізовано ${result.data.length} записів`);
+                } else {
+                    showWorldBankStatus('warning', 'API недоступний', 'Використовуються зразкові дані для демонстрації');
+                    showTabStatus('comparison', 'success', 'Порівняння завершено', `Проаналізовано ${result.data.length} записів`);
+                }
 
             } catch (error) {
                 console.error('Помилка завантаження даних порівняння:', error);
                 showError('Помилка завантаження даних порівняння: ' + error.message);
+                showWorldBankStatus('error', 'Помилка API', 'Не вдалося отримати дані з Світового банку');
+                showTabStatus('comparison', 'error', 'Помилка порівняння', 'Не вдалося виконати порівняння країн');
             }
         }
 
@@ -1745,6 +1831,21 @@
                     .map(option => option.value);
                 const years = document.getElementById('trends-years').value;
 
+                // Перевіряємо чи вибрані необхідні фільтри
+                if (!country) {
+                    showTabStatus('trends', 'error', 'Оберіть країну', 'Для аналізу трендів потрібно вибрати країну');
+                    return;
+                }
+
+                if (indicators.length === 0) {
+                    showTabStatus('trends', 'error', 'Оберіть показники', 'Для аналізу трендів потрібно вибрати принаймні один показник');
+                    return;
+                }
+
+                // Показуємо статус завантаження
+                showWorldBankStatus('info', 'Завантаження...', 'Отримуємо дані з API Світового банку...');
+                showTabStatus('trends', 'info', 'Завантаження...', 'Отримуємо дані з API Світового банку...');
+
                 const params = new URLSearchParams();
                 if (indicators.length > 0) params.append('indicators', indicators.join(','));
                 params.append('years', years);
@@ -1755,9 +1856,54 @@
                 updateTrendsChart(result);
                 updateTrendsAnalysis(result);
 
+                // Оновлюємо статус після успішного аналізу
+                if (result.trends && Object.keys(result.trends).length > 0) {
+                    const count = Object.keys(result.trends).length;
+                    // Перевіряємо чи це зразкові дані (завжди Україна з певними значеннями)
+                    const isSampleData = result.country === 'Україна' && 
+                                        result.trends.GDP && 
+                                        result.trends.GDP.latest_value === 200;
+                    
+                    if (isSampleData) {
+                        showWorldBankStatus('warning', 
+                            'API недоступний', 
+                            'Використовуються зразкові дані для демонстрації');
+                        showTabStatus('trends', 'success', 
+                            'Аналіз завершено', 
+                            `Проаналізовано показників: ${count} для ${result.country}`);
+                    } else {
+                        showWorldBankStatus('success', 
+                            'API працює', 
+                            'Дані успішно отримано з Світового банку');
+                        showTabStatus('trends', 'success', 
+                            'Аналіз завершено', 
+                            `Проаналізовано показників: ${count} для ${result.country}`);
+                    }
+                } else {
+                    showWorldBankStatus('error', 
+                        'Немає даних для аналізу', 
+                        'Не вдалося отримати дані для аналізу трендів.');
+                    showTabStatus('trends', 'error', 
+                        'Немає даних', 
+                        'Не вдалося отримати дані для аналізу трендів.');
+                }
+
             } catch (error) {
                 console.error('Помилка завантаження даних трендів:', error);
                 showError('Помилка завантаження даних трендів: ' + error.message);
+                
+                // Детальна інформація про помилку
+                let errorDetails = error.message;
+                if (error.message.includes('APIError')) {
+                    errorDetails = 'API Світового банку повертає некоректні дані. Перевірте логи сервера для деталей.';
+                } else if (error.message.includes('JSON')) {
+                    errorDetails = 'Помилка парсингу JSON від API. Можливо, сервер тимчасово недоступний.';
+                } else if (error.message.includes('timeout')) {
+                    errorDetails = 'Тайм-аут запиту до API. Спробуйте зменшити кількість років аналізу.';
+                }
+                
+                showWorldBankStatus('error', 'Помилка API', errorDetails);
+                showTabStatus('trends', 'error', 'Помилка аналізу', 'Не вдалося виконати аналіз трендів');
             }
         }
 
@@ -1876,11 +2022,15 @@
             console.log('Параметри:', { countries, indicators, currency, startYear, endYear });
             
             if (countries.length === 0 || indicators.length === 0) {
+                showTabStatus('normalized', 'error', 'Оберіть параметри', 'Оберіть країни та показники');
                 showError('Будь ласка, оберіть країни та показники');
                 return;
             }
             
             try {
+                // Показуємо статус завантаження після валідації
+                showWorldBankStatus('info', 'Завантаження...', 'Нормалізуємо дані');
+                showTabStatus('normalized', 'info', 'Завантаження...', 'Нормалізуємо дані');
                 showLoading();
                 
                 const params = new URLSearchParams({
@@ -1905,12 +2055,18 @@
                         const count = result.total_records || result.data.length;
                         if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
                             showWorldBankStatus('warning', 
-                                'Використовуються зразкові дані', 
-                                `Отримано записів: ${count}`);
+                                'API недоступний', 
+                                'Використовуються зразкові дані для демонстрації');
+                            showTabStatus('normalized', 'success', 
+                                'Нормалізація завершена', 
+                                `Оброблено записів: ${count}`);
                         } else {
                             showWorldBankStatus('success', 
-                                'Дані з API Світового банку', 
-                                `Отримано записів: ${count}`);
+                                'API працює', 
+                                'Дані успішно отримано з Світового банку');
+                            showTabStatus('normalized', 'success', 
+                                'Нормалізація завершена', 
+                                `Оброблено записів: ${count}`);
                         }
                     }
                 } else {
@@ -2021,11 +2177,15 @@
             const endYear = document.getElementById('health-end-year').value;
             
             if (countries.length === 0) {
+                showTabStatus('health', 'error', 'Оберіть країни', 'Оберіть країни для аналізу');
                 showError('Будь ласка, оберіть країни для аналізу');
                 return;
             }
             
             try {
+                // Показуємо статус завантаження після валідації
+                showWorldBankStatus('info', 'Завантаження...', 'Аналізуємо економічне здоров\'я');
+                showTabStatus('health', 'info', 'Завантаження...', 'Аналізуємо економічне здоров\'я');
                 showLoading();
                 
                 const params = new URLSearchParams({
@@ -2047,11 +2207,17 @@
                         const count = Object.keys(result.analysis).length;
                         if (firstCountry.country_name === 'Ukraine' || firstCountry.country_name === 'USA') {
                             showWorldBankStatus('warning', 
-                                'Використовуються зразкові дані', 
+                                'API недоступний', 
+                                'Використовуються зразкові дані для демонстрації');
+                            showTabStatus('health', 'success', 
+                                'Аналіз завершено', 
                                 `Опрацьовано країн: ${count}`);
                         } else {
                             showWorldBankStatus('success', 
-                                'Дані з API Світового банку', 
+                                'API працює', 
+                                'Дані успішно отримано з Світового банку');
+                            showTabStatus('health', 'success', 
+                                'Аналіз завершено', 
                                 `Опрацьовано країн: ${count}`);
                         }
                     }
@@ -2078,15 +2244,28 @@
             const scores = Object.keys(analysis).map(code => analysis[code].health_score);
             const levels = Object.keys(analysis).map(code => analysis[code].health_level);
             
-            // Кольори залежно від рівня здоров'я
+            // Кольори залежно від рівня здоров'я (підтримка UA/EN)
             const colors = levels.map(level => {
                 switch(level) {
-                    case 'Відмінний': return '#28a745';
-                    case 'Добрий': return '#17a2b8';
-                    case 'Середній': return '#ffc107';
-                    case 'Поганий': return '#fd7e14';
-                    case 'Критичний': return '#dc3545';
-                    default: return '#6c757d';
+                    case 'Відмінний':
+                    case 'Excellent':
+                        return '#28a745'; // green
+                    case 'Добрий':
+                    case 'Good':
+                        return '#17a2b8'; // teal
+                    case 'Середній':
+                    case 'Medium':
+                        return '#ffc107'; // yellow
+                    case 'Поганий':
+                    case 'Poor':
+                        return '#fd7e14'; // orange
+                    case 'Критичний':
+                    case 'Critical':
+                        return '#dc3545'; // red
+                    case 'No Data':
+                        return '#6c757d'; // gray
+                    default:
+                        return '#6c757d';
                 }
             });
             
@@ -2250,46 +2429,153 @@
         }
         
         // Функції для відображення статусу у панелі Світового банку
-        function showWorldBankStatus(type, status, details = '') {
-            const alert = document.getElementById('worldbank-status-alert');
-            const statusText = document.getElementById('worldbank-status-text');
-            const statusDetails = document.getElementById('worldbank-status-details');
+        function showWorldBankStatus(type, status, details = '', tabId = null) {
+            // Загальний API статус (тільки для реальних операцій, не для підказок)
+            if (type !== 'info' || (status !== 'Натисніть "Завантажити"' && 
+                                   status !== 'Натисніть "Порівняти"' && 
+                                   status !== 'Натисніть "Аналізувати"' && 
+                                   status !== 'Натисніть "Нормалізувати дані"' && 
+                                   status !== 'Натисніть "Аналізувати здоров\'я"')) {
+                
+                const apiAlert = document.getElementById('worldbank-api-status-alert');
+                const apiStatusText = document.getElementById('worldbank-api-status-text');
+                const apiStatusDetails = document.getElementById('worldbank-api-status-details');
 
-            alert.className = 'alert d-flex align-items-center mb-3';
+                apiAlert.className = 'alert d-flex align-items-center mb-3';
 
-            switch(type) {
-                case 'success':
-                    alert.classList.add('alert-success');
-                    alert.querySelector('i').className = 'fas fa-check-circle me-2';
-                    break;
-                case 'warning':
-                    alert.classList.add('alert-warning');
-                    alert.querySelector('i').className = 'fas fa-exclamation-triangle me-2';
-                    break;
-                case 'error':
-                    alert.classList.add('alert-danger');
-                    alert.querySelector('i').className = 'fas fa-exclamation-circle me-2';
-                    break;
-                case 'info':
-                default:
-                    alert.classList.add('alert-info');
-                    alert.querySelector('i').className = 'fas fa-info-circle me-2';
-                    break;
+                switch(type) {
+                    case 'success':
+                        apiAlert.classList.add('alert-success');
+                        apiAlert.querySelector('i').className = 'fas fa-check-circle me-2';
+                        break;
+                    case 'warning':
+                        apiAlert.classList.add('alert-warning');
+                        apiAlert.querySelector('i').className = 'fas fa-exclamation-triangle me-2';
+                        break;
+                    case 'error':
+                        apiAlert.classList.add('alert-danger');
+                        apiAlert.querySelector('i').className = 'fas fa-exclamation-circle me-2';
+                        break;
+                    case 'info':
+                    default:
+                        apiAlert.classList.add('alert-info');
+                        apiAlert.querySelector('i').className = 'fas fa-info-circle me-2';
+                        break;
+                }
+
+                apiStatusText.textContent = status;
+                apiStatusDetails.textContent = details;
+                apiAlert.style.display = 'flex';
+
+                if (type === 'success') {
+                    setTimeout(() => {
+                        apiAlert.style.display = 'none';
+                    }, 5000);
+                }
             }
 
-            statusText.textContent = status;
-            statusDetails.textContent = details;
-            alert.style.display = 'flex';
-
-            if (type === 'success') {
-                setTimeout(() => {
-                    alert.style.display = 'none';
-                }, 5000);
+            // Статус для конкретної вкладки
+            if (tabId) {
+                const tabAlert = document.getElementById(`${tabId}-status-alert`);
+                const tabStatusText = document.getElementById(`${tabId}-status-text`);
+                const tabStatusDetails = document.getElementById(`${tabId}-status-details`);
+                
+                if (tabAlert && tabStatusText && tabStatusDetails) {
+                    tabAlert.className = 'alert d-flex align-items-center mb-3';
+                    
+                    switch(type) {
+                        case 'success':
+                            tabAlert.classList.add('alert-success');
+                            tabAlert.querySelector('i').className = 'fas fa-check-circle me-2';
+                            break;
+                        case 'warning':
+                            tabAlert.classList.add('alert-warning');
+                            tabAlert.querySelector('i').className = 'fas fa-exclamation-triangle me-2';
+                            break;
+                        case 'error':
+                            tabAlert.classList.add('alert-danger');
+                            tabAlert.querySelector('i').className = 'fas fa-exclamation-circle me-2';
+                            break;
+                        case 'info':
+                        default:
+                            tabAlert.classList.add('alert-light');
+                            tabAlert.querySelector('i').className = 'fas fa-info-circle me-2';
+                            break;
+                    }
+                    
+                    tabStatusText.textContent = status;
+                    tabStatusDetails.textContent = details;
+                    tabAlert.style.display = 'flex';
+                }
             }
         }
 
         function hideWorldBankStatus() {
-            document.getElementById('worldbank-status-alert').style.display = 'none';
+            document.getElementById('worldbank-api-status-alert').style.display = 'none';
+        }
+
+        // Показуємо підказки для всіх вкладок при завантаженні
+        function showTabHints() {
+            // Показники
+            showTabStatus('indicators', 'info', 'Натисніть "Завантажити"', 'Оберіть країни, показники та період');
+            
+            // Порівняння
+            showTabStatus('comparison', 'info', 'Натисніть "Порівняти"', 'Оберіть показник, країни та років для аналізу');
+            
+            // Тренди
+            showTabStatus('trends', 'info', 'Натисніть "Аналізувати"', 'Оберіть країну, показники та років для аналізу');
+            
+            // Нормалізовані
+            showTabStatus('normalized', 'info', 'Натисніть "Нормалізувати дані"', 'Оберіть країни, показники, валюту та період');
+            
+            // Економічне здоров'я
+            showTabStatus('health', 'info', 'Натисніть "Аналізувати здоров\'я"', 'Оберіть країни та період для аналізу економічного здоров\'я');
+        }
+
+        // Перевіряємо стан API при завантаженні сторінки
+        async function checkAPIStatus() {
+            try {
+                // Показуємо статус перевірки
+                showWorldBankStatus('info', 'Перевірка API...', 'Тестуємо підключення до Світового банку');
+                
+                // Робимо тестовий запит до API
+                const response = await fetch('/api/worldbank/indicators?countries=UA&indicators=GDP&start_year=2023&end_year=2023');
+                const result = await response.json();
+                
+                // Перевіряємо чи отримали реальні дані
+                if (result && result.data && result.data.length > 0) {
+                    const firstItem = result.data[0];
+                    // Якщо це зразкові дані (Ukraine з певними значеннями)
+                    if (firstItem.Country_Name === 'Ukraine' && firstItem.GDP === 200) {
+                        showWorldBankStatus('warning', 'API недоступний', 'Використовуються зразкові дані для демонстрації');
+                    } else {
+                        showWorldBankStatus('success', 'API працює', 'Підключення до Світового банку успішне');
+                    }
+                } else {
+                    showWorldBankStatus('warning', 'API недоступний', 'Не вдалося отримати дані з Світового банку');
+                }
+                
+            } catch (error) {
+                console.error('Помилка перевірки API:', error);
+                showWorldBankStatus('error', 'API недоступний', 'Не вдалося підключитися до Світового банку');
+            }
+        }
+
+        // Функція для показу статусу конкретної вкладки
+        function showTabStatus(tabId, type, status, details) {
+            const tabAlert = document.getElementById(`${tabId}-status-alert`);
+            const tabStatusText = document.getElementById(`${tabId}-status-text`);
+            const tabStatusDetails = document.getElementById(`${tabId}-status-details`);
+            
+            if (tabAlert && tabStatusText && tabStatusDetails) {
+                tabAlert.className = 'alert d-flex align-items-center mb-3';
+                tabAlert.classList.add('alert-light');
+                tabAlert.querySelector('i').className = 'fas fa-info-circle me-2';
+                
+                tabStatusText.textContent = status;
+                tabStatusDetails.textContent = details;
+                tabAlert.style.display = 'flex';
+            }
         }
 
         // Перевірка статусу даних Світового банку

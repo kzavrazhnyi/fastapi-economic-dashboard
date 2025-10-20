@@ -275,46 +275,147 @@ class WorldBankDataProvider:
             current_year = datetime.now().year
             start_year = current_year - years
             
+            print(f"Спроба отримати тренди для {country}, показники: {indicators}, роки: {start_year}-{current_year}")
+            
             indicator_codes = [self.indicators[ind] for ind in indicators]
+            print(f"Коди показників: {indicator_codes}")
+            
+            # Обмежуємо кількість показників для стабільності
+            limited_indicators = indicator_codes[:2]  # Максимум 2 показники
+            limited_years = min(years, 10)  # Максимум 10 років
+            
+            print(f"Обмежені параметри: показники={limited_indicators}, років={limited_years}")
             
             data = wb.data.DataFrame(
-                [self.indicators.get(code, code) for code in indicator_codes],
+                limited_indicators,
                 [country],
-                time=range(start_year, current_year + 1),
+                time=range(current_year - limited_years, current_year + 1),
                 labels=True,
                 skipBlanks=True
             )
             
+            if data.empty:
+                print("API повернув порожні дані, пробуємо HTTP fallback...")
+                return self._fetch_trends_via_http(country, limited_indicators, current_year - limited_years, current_year)
+            
             df = data.reset_index()
-            df.columns = ['Country', 'Year'] + indicators
+            df.columns = ['Country', 'Year'] + [ind for ind in indicators if self.indicators[ind] in limited_indicators]
             
             # Обчислюємо тренди
             trends = {}
             for indicator in indicators:
-                values = df[indicator].dropna()
-                if len(values) > 1:
-                    # Простий лінійний тренд
-                    x = np.arange(len(values))
-                    y = values.values
-                    trend_slope = np.polyfit(x, y, 1)[0]
-                    trends[indicator] = {
-                        'slope': trend_slope,
-                        'direction': 'зростання' if trend_slope > 0 else 'спад',
-                        'latest_value': values.iloc[-1],
-                        'years_analyzed': len(values)
-                    }
+                if indicator in df.columns:
+                    values = df[indicator].dropna()
+                    if len(values) > 1:
+                        # Простий лінійний тренд
+                        x = np.arange(len(values))
+                        y = values.values
+                        trend_slope = np.polyfit(x, y, 1)[0]
+                        trends[indicator] = {
+                            'slope': trend_slope,
+                            'direction': 'зростання' if trend_slope > 0 else 'спад',
+                            'latest_value': values.iloc[-1],
+                            'years_analyzed': len(values)
+                        }
             
+            print(f"Успішно отримано тренди: {list(trends.keys())}")
             return {
                 'country': self.countries.get(country, country),
                 'country_code': country,
-                'analysis_period': f"{start_year}-{current_year}",
+                'analysis_period': f"{current_year - limited_years}-{current_year}",
                 'trends': trends,
                 'raw_data': df.to_dict('records')
             }
             
         except Exception as e:
-            print(f"Помилка аналізу трендів: {e}")
-            return self._get_sample_trend_data()
+            print(f"Помилка аналізу трендів через wbgapi: {e}")
+            print(f"Тип помилки: {type(e).__name__}")
+            print("Пробуємо HTTP fallback...")
+            try:
+                return self._fetch_trends_via_http(country, indicator_codes[:2], current_year - min(years, 10), current_year)
+            except Exception as http_error:
+                print(f"HTTP fallback також не вдався: {http_error}")
+                print("Використовуємо зразкові дані...")
+                return self._get_sample_trend_data(indicators)
+    
+    def _fetch_trends_via_http(self, country: str, indicator_codes: List[str], start_year: int, end_year: int) -> Dict:
+        """HTTP fallback для отримання трендів"""
+        import requests
+        import time
+        
+        trends = {}
+        raw_data = []
+        
+        for indicator_code in indicator_codes:
+            url = f"https://api.worldbank.org/v2/country/{country}/indicator/{indicator_code}"
+            params = {
+                'date': f"{start_year}:{end_year}",
+                'format': 'json',
+                'per_page': 1000
+            }
+            
+            try:
+                print(f"HTTP запит для {indicator_code}: {url}?date={params['date']}")
+                response = requests.get(url, params=params, timeout=10)
+                response.raise_for_status()
+                json_data = response.json()
+                
+                if len(json_data) > 1 and isinstance(json_data[1], list):
+                    values = []
+                    years = []
+                    for entry in json_data[1]:
+                        if entry['value'] is not None:
+                            values.append(float(entry['value']))
+                            years.append(int(entry['date']))
+                    
+                    if len(values) > 1:
+                        # Обчислюємо тренд
+                        x = np.arange(len(values))
+                        trend_slope = np.polyfit(x, values, 1)[0]
+                        
+                        # Знаходимо дружню назву показника
+                        friendly_name = None
+                        for name, code in self.indicators.items():
+                            if code == indicator_code:
+                                friendly_name = name
+                                break
+                        
+                        if friendly_name:
+                            trends[friendly_name] = {
+                                'slope': trend_slope,
+                                'direction': 'зростання' if trend_slope > 0 else 'спад',
+                                'latest_value': values[-1],
+                                'years_analyzed': len(values)
+                            }
+                            
+                            # Додаємо до raw_data
+                            for i, year in enumerate(years):
+                                existing_row = next((row for row in raw_data if row['Year'] == year), None)
+                                if existing_row:
+                                    existing_row[friendly_name] = values[i]
+                                else:
+                                    raw_data.append({
+                                        'Country': country,
+                                        'Year': year,
+                                        friendly_name: values[i]
+                                    })
+                
+                time.sleep(1)  # Затримка між запитами
+                
+            except Exception as e:
+                print(f"HTTP помилка для {indicator_code}: {e}")
+                continue
+        
+        if not trends:
+            raise Exception("HTTP fallback не вдався - немає даних")
+        
+        return {
+            'country': self.countries.get(country, country),
+            'country_code': country,
+            'analysis_period': f"{start_year}-{end_year}",
+            'trends': trends,
+            'raw_data': raw_data
+        }
     
     def _get_sample_data(self) -> pd.DataFrame:
         """Повертає зразкові дані у випадку помилки API"""
@@ -585,25 +686,70 @@ class WorldBankDataProvider:
         
         return df_converted
     
-    def _get_sample_trend_data(self) -> Dict:
+    def _get_sample_trend_data(self, indicators: List[str] = None) -> Dict:
         """Повертає зразкові дані для аналізу трендів"""
+        if indicators is None:
+            indicators = ['GDP', 'GDP_PER_CAPITA']
+        
+        # Базові дані для всіх показників
+        all_data = {
+            'GDP': {
+                'slope': 15,
+                'direction': 'зростання',
+                'latest_value': 200,
+                'years_analyzed': 4,
+                'raw_values': [150, 170, 180, 200]
+            },
+            'GDP_PER_CAPITA': {
+                'slope': 500,
+                'direction': 'зростання',
+                'latest_value': 4500,
+                'years_analyzed': 4,
+                'raw_values': [3500, 3800, 4000, 4500]
+            },
+            'INFLATION': {
+                'slope': -0.5,
+                'direction': 'спад',
+                'latest_value': 8.5,
+                'years_analyzed': 4,
+                'raw_values': [10.0, 9.5, 9.0, 8.5]
+            },
+            'UNEMPLOYMENT': {
+                'slope': -0.3,
+                'direction': 'спад',
+                'latest_value': 7.8,
+                'years_analyzed': 4,
+                'raw_values': [8.5, 8.2, 8.0, 7.8]
+            }
+        }
+        
+        # Фільтруємо тільки обрані показники
+        filtered_trends = {}
+        filtered_raw_data = []
+        
+        years = [2020, 2021, 2022, 2023]
+        
+        for indicator in indicators:
+            if indicator in all_data:
+                filtered_trends[indicator] = {
+                    'slope': all_data[indicator]['slope'],
+                    'direction': all_data[indicator]['direction'],
+                    'latest_value': all_data[indicator]['latest_value'],
+                    'years_analyzed': all_data[indicator]['years_analyzed']
+                }
+        
+        # Створюємо raw_data тільки для обраних показників
+        for i, year in enumerate(years):
+            row = {'Country': 'UA', 'Year': year}
+            for indicator in indicators:
+                if indicator in all_data:
+                    row[indicator] = all_data[indicator]['raw_values'][i]
+            filtered_raw_data.append(row)
+        
         return {
             'country': 'Україна',
             'country_code': 'UA',
             'analysis_period': '2020-2024',
-            'trends': {
-                'GDP': {
-                    'slope': 15,  # мільярди доларів на рік
-                    'direction': 'зростання',
-                    'latest_value': 200,  # мільярди доларів
-                    'years_analyzed': 4
-                },
-                'GDP_PER_CAPITA': {
-                    'slope': 500,
-                    'direction': 'зростання',
-                    'latest_value': 4500,
-                    'years_analyzed': 4
-                }
-            },
-            'raw_data': []
+            'trends': filtered_trends,
+            'raw_data': filtered_raw_data
         }

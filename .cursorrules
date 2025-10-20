@@ -11,5 +11,9 @@ projectRules:
     rule: "In PowerShell, use ';' instead of '&&'. The '&&' operator must not be used."
   - description: Encoding
     rule: "Ensure UTF-8 for files and console output where applicable."
+  - description: Git commits language
+    rule: "Make Git commits ONLY in English language. Use clear, descriptive commit messages."
+  - description: Code comments language
+    rule: "Write code comments in two languages: English and Ukrainian (en/uk). Use format: '// English comment / Український коментар' or separate lines for each language."
 
 
