@@ -276,6 +276,14 @@
                         Економетричні дані Світового банку
                     </div>
                     <div id="worldbank-panel">
+                        <!-- Статус даних Світового банку -->
+                        <div class="alert alert-info d-flex align-items-center mb-3" id="worldbank-status-alert" style="display: none !important;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <div>
+                                <strong>Статус даних:</strong> <span id="worldbank-status-text">Завантаження...</span>
+                                <small class="d-block text-muted" id="worldbank-status-details"></small>
+                            </div>
+                        </div>
                         <!-- Фільтри для даних Світового банку -->
                         <div class="row mb-3">
                             <div class="col-md-3">
@@ -1360,15 +1368,15 @@
                 updateWorldBankIndicatorsChart(result);
                 updateWorldBankIndicatorsTable(result);
                 
-                // Перевіряємо статус даних
+                // Перевіряємо статус даних (індикатор у панелі Світового банку)
                 if (result && result.length > 0) {
                     const firstItem = result[0];
                     if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
-                        showDataStatus('warning', 
+                        showWorldBankStatus('warning', 
                             'Використовуються зразкові дані', 
                             'API Світового банку недоступний. Відображаються демонстраційні дані.');
                     } else {
-                        showDataStatus('success', 
+                        showWorldBankStatus('success', 
                             'Дані з API Світового банку', 
                             'Отримано реальні економічні дані.');
                     }
@@ -1672,15 +1680,15 @@
                     updateNormalizedChart(result.data, result.normalization_info, currency);
                     updateNormalizedTable(result.data, result.normalization_info);
                     
-                    // Перевіряємо статус даних
+                    // Перевіряємо статус даних (індикатор у панелі Світового банку)
                     if (result.data && result.data.length > 0) {
                         const firstItem = result.data[0];
                         if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
-                            showDataStatus('warning', 
+                            showWorldBankStatus('warning', 
                                 'Використовуються зразкові дані', 
                                 'API Світового банку недоступний. Відображаються демонстраційні дані.');
                         } else {
-                            showDataStatus('success', 
+                            showWorldBankStatus('success', 
                                 'Дані з API Світового банку', 
                                 'Отримано реальні економічні дані.');
                         }
@@ -1806,15 +1814,15 @@
                     updateHealthChart(result.analysis);
                     updateHealthAnalysis(result.analysis, result.methodology);
                     
-                    // Перевіряємо статус даних
+                    // Перевіряємо статус даних (індикатор у панелі Світового банку)
                     if (result.analysis && Object.keys(result.analysis).length > 0) {
                         const firstCountry = Object.values(result.analysis)[0];
                         if (firstCountry.country_name === 'Ukraine' || firstCountry.country_name === 'USA') {
-                            showDataStatus('warning', 
+                            showWorldBankStatus('warning', 
                                 'Використовуються зразкові дані', 
                                 'API Світового банку недоступний. Відображаються демонстраційні дані.');
                         } else {
-                            showDataStatus('success', 
+                            showWorldBankStatus('success', 
                                 'Дані з API Світового банку', 
                                 'Отримано реальні економічні дані.');
                         }
@@ -1965,7 +1973,7 @@
             }
         }
         
-        // Функції для відображення статусу даних
+        // Функції для відображення статусу даних (глобальний)
         function showDataStatus(type, status, details = '') {
             const alert = document.getElementById('data-status-alert');
             const statusText = document.getElementById('data-status-text');
@@ -2011,6 +2019,49 @@
             document.getElementById('data-status-alert').style.display = 'none';
         }
         
+        // Функції для відображення статусу у панелі Світового банку
+        function showWorldBankStatus(type, status, details = '') {
+            const alert = document.getElementById('worldbank-status-alert');
+            const statusText = document.getElementById('worldbank-status-text');
+            const statusDetails = document.getElementById('worldbank-status-details');
+
+            alert.className = 'alert d-flex align-items-center mb-3';
+
+            switch(type) {
+                case 'success':
+                    alert.classList.add('alert-success');
+                    alert.querySelector('i').className = 'fas fa-check-circle me-2';
+                    break;
+                case 'warning':
+                    alert.classList.add('alert-warning');
+                    alert.querySelector('i').className = 'fas fa-exclamation-triangle me-2';
+                    break;
+                case 'error':
+                    alert.classList.add('alert-danger');
+                    alert.querySelector('i').className = 'fas fa-exclamation-circle me-2';
+                    break;
+                case 'info':
+                default:
+                    alert.classList.add('alert-info');
+                    alert.querySelector('i').className = 'fas fa-info-circle me-2';
+                    break;
+            }
+
+            statusText.textContent = status;
+            statusDetails.textContent = details;
+            alert.style.display = 'flex';
+
+            if (type === 'success') {
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        function hideWorldBankStatus() {
+            document.getElementById('worldbank-status-alert').style.display = 'none';
+        }
+
         // Перевірка статусу даних Світового банку
         async function checkWorldBankDataStatus() {
             try {
@@ -2022,21 +2073,21 @@
                     const firstItem = data[0];
                     // Зразкові дані мають певні характеристики
                     if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
-                        showDataStatus('warning', 
+                        showWorldBankStatus('warning', 
                             'Використовуються зразкові дані', 
                             'API Світового банку недоступний. Відображаються демонстраційні дані для тестування функціональності.');
                     } else {
-                        showDataStatus('success', 
+                        showWorldBankStatus('success', 
                             'Дані з API Світового банку', 
                             'Отримано реальні економічні дані з офіційного джерела.');
                     }
                 } else {
-                    showDataStatus('error', 
+                    showWorldBankStatus('error', 
                         'Дані недоступні', 
                         'Не вдалося завантажити дані з API Світового банку.');
                 }
             } catch (error) {
-                showDataStatus('error', 
+                showWorldBankStatus('error', 
                     'Помилка завантаження', 
                     'Не вдалося перевірити статус даних: ' + error.message);
             }
