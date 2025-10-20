@@ -20,16 +20,21 @@ if sys.platform == "win32":
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 if __name__ == "__main__":
+    import os
+    
+    # Отримуємо порт з змінної середовища (для Render) або використовуємо 8000
+    port = int(os.environ.get("PORT", 8000))
+    
     print("🚀 Запуск FastAPI сервера з економетричними даними...")
-    print("📊 Доступ до дашборду: http://localhost:8000")
-    print("📚 API документація: http://localhost:8000/docs")
+    print(f"📊 Доступ до дашборду: http://localhost:{port}")
+    print(f"📚 API документація: http://localhost:{port}/docs")
     print("🔄 Для зупинки сервера натисніть Ctrl+C")
     print("-" * 50)
     
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8000,
-        reload=True,
+        port=port,
+        reload=False,  # Вимкнути reload для продакшену
         log_level="info"
     )

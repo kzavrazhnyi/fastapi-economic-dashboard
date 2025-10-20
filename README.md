@@ -68,6 +68,47 @@ aicursoragent/
 - **Перегляд файлів**: інтерактивний перегляд CSV файлів з пагінацією
 - **Статистика файлів**: детальний аналіз структури та змісту даних
 
+## Деплой на Render.com
+
+### Автоматичний деплой через GitHub
+
+1. **Підключіть репозиторій до Render**:
+   - Перейдіть на [render.com](https://render.com)
+   - Натисніть "New +" → "Web Service"
+   - Підключіть GitHub репозиторій: `https://github.com/kzavrazhnyi/fastapi-economic-dashboard`
+
+2. **Налаштування сервісу**:
+   - **Name**: `fastapi-economic-dashboard`
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `python run_server.py`
+   - **Plan**: `Free` (або `Starter` для кращої продуктивності)
+
+3. **Змінні середовища** (опціонально):
+   - `PYTHON_VERSION`: `3.11.0`
+   - `PORT`: `8000` (автоматично встановлюється Render)
+
+### Альтернативні команди запуску
+
+Якщо основна команда не працює, спробуйте:
+
+```bash
+# Варіант 1: Через render_start.py
+python render_start.py
+
+# Варіант 2: Через Gunicorn
+gunicorn -c gunicorn.conf.py app.main:app
+
+# Варіант 3: Прямий uvicorn
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+### Перевірка деплою
+
+Після успішного деплою ваш додаток буде доступний за URL:
+- **Веб-інтерфейс**: `https://your-app-name.onrender.com`
+- **API документація**: `https://your-app-name.onrender.com/docs`
+
 ## API Ендпоінти
 
 - `GET /` - головна сторінка з візуалізацією
