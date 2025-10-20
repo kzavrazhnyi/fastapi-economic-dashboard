@@ -150,57 +150,7 @@
         </div>
     </div>
 
-<!-- Панель криптовалют -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="chart-container">
-            <div class="chart-title">
-                <i class="fab fa-bitcoin me-2"></i>
-                Огляд ринку криптовалют
-                <button class="btn btn-sm btn-outline-success ms-2" onclick="loadCryptoMarketData()" title="Оновити дані">
-                    <i class="fas fa-sync-alt"></i> Оновити
-                </button>
-                <div class="ms-3 d-inline-block">
-                    <select id="crypto-currency" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                        <option value="usd" selected>USD</option>
-                        <option value="uah">UAH</option>
-                        <option value="eur">EUR</option>
-                    </select>
-                </div>
-            </div>
-            <div class="d-flex align-items-center gap-4 mb-2">
-                <div class="small text-muted">
-                    <i class="fas fa-globe me-1"></i>
-                    Загальна капіталізація ринку: <strong id="crypto-global-mcap">—</strong>
-                </div>
-                <div class="small text-muted">
-                    <i class="fab fa-btc me-1"></i>
-                    Домінація BTC: <strong id="crypto-global-btc">—</strong>
-                </div>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>#</th>
-                            <th>Назва</th>
-                            <th>Ціна</th>
-                            <th>24г (%)</th>
-                            <th>Ринкова капіталізація</th>
-                            <th>Об'єм (24г)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="crypto-market-table"></tbody>
-                </table>
-            </div>
-            <div class="mt-2 small text-muted">
-                Джерело даних: <a href="https://www.coingecko.com/en/api/documentation" target="_blank" rel="noopener noreferrer">CoinGecko API</a>. Дані оновлюються з публічного API без ключа.
-            </div>
-        </div>
-    </div>
-    
-</div>
+ 
     <div class="container mt-4">
         <!-- KPI Панель -->
         <div class="row" id="kpi-panel">
@@ -318,7 +268,108 @@
             </div>
         </div>
 
-        <!-- Панель даних Світового банку -->
+
+        <!-- Графіки -->
+        <div class="row">
+            <!-- Графік продажів у часі -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Динаміка продажів
+                    </div>
+                    <div id="sales-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+            
+            <!-- Графік продажів за продуктами -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Топ продуктів
+                    </div>
+                    <div id="products-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Графік продажів за регіонами -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Розподіл за регіонами
+                    </div>
+                    <div id="regions-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+            
+            <!-- Графік рентабельності -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-area me-2"></i>
+                        Рентабельність продуктів
+                    </div>
+                    <div id="profitability-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Панель криптовалют (переміщено в кінець та уніфіковано ширину) -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fab fa-bitcoin me-2"></i>
+                        Огляд ринку криптовалют
+                        <button class="btn btn-sm btn-outline-success ms-2" onclick="loadCryptoMarketData()" title="Оновити дані">
+                            <i class="fas fa-sync-alt"></i> Оновити
+                        </button>
+                        <div class="ms-3 d-inline-block">
+                            <select id="crypto-currency" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                <option value="usd" selected>USD</option>
+                                <option value="uah">UAH</option>
+                                <option value="eur">EUR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-4 mb-2">
+                        <div class="small text-muted">
+                            <i class="fas fa-globe me-1"></i>
+                            Загальна капіталізація ринку: <strong id="crypto-global-mcap">—</strong>
+                        </div>
+                        <div class="small text-muted">
+                            <i class="fab fa-btc me-1"></i>
+                            Домінація BTC: <strong id="crypto-global-btc">—</strong>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Назва</th>
+                                    <th>Ціна</th>
+                                    <th>24г (%)</th>
+                                    <th>Ринкова капіталізація</th>
+                                    <th>Об'єм (24г)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="crypto-market-table"></tbody>
+                        </table>
+                    </div>
+                    <div class="mt-2 small text-muted">
+                        Джерело даних: <a href="https://www.coingecko.com/en/api/documentation" target="_blank" rel="noopener noreferrer">CoinGecko API</a>. Дані оновлюються з публічного API без ключа.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель даних Світового банку (переміщено в кінець сторінки) -->
         <div class="row mb-4">
             <div class="col-md-12">
                 <div class="chart-container">
@@ -335,38 +386,7 @@
                                 <small class="d-block text-muted" id="worldbank-status-details">Оберіть країни, показники та період</small>
                             </div>
                         </div>
-                        <!-- Фільтри для даних Світового банку -->
-                        <div class="row mb-3">
-                            <div class="col-md-3">
-                                <label class="form-label">Країни</label>
-                                <select id="worldbank-countries" class="form-select" multiple>
-                                    <!-- Буде заповнено динамічно -->
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Показники</label>
-                                <select id="worldbank-indicators" class="form-select" multiple>
-                                    <!-- Буде заповнено динамічно -->
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Початковий рік</label>
-                                <input type="number" id="worldbank-start-year" class="form-control" value="2020" min="1960" max="2024">
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Кінцевий рік</label>
-                                <input type="number" id="worldbank-end-year" class="form-control" value="2023" min="1960" max="2024">
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">&nbsp;</label>
-                                <div>
-                                    <button class="btn btn-custom w-100" onclick="loadWorldBankData()">
-                                        <i class="fas fa-download me-1"></i>
-                                        Завантажити
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        
 
                         <!-- Навігація по розділах -->
                         <ul class="nav nav-tabs" id="worldbank-tabs" role="tablist">
@@ -406,6 +426,38 @@
                         <div class="tab-content" id="worldbank-tab-content">
                             <!-- Вкладка показників -->
                             <div class="tab-pane fade show active" id="indicators-content" role="tabpanel">
+                                    <!-- Фільтри для показників Світового банку -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label">Країни</label>
+                                            <select id="worldbank-countries" class="form-select" multiple>
+                                                <!-- Буде заповнено динамічно -->
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Показники</label>
+                                            <select id="worldbank-indicators" class="form-select" multiple>
+                                                <!-- Буде заповнено динамічно -->
+                                            </select>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Початковий рік</label>
+                                            <input type="number" id="worldbank-start-year" class="form-control" value="2020" min="1960" max="2024">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Кінцевий рік</label>
+                                            <input type="number" id="worldbank-end-year" class="form-control" value="2023" min="1960" max="2024">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">&nbsp;</label>
+                                            <div>
+                                                <button class="btn btn-custom w-100" onclick="loadWorldBankData()">
+                                                    <i class="fas fa-download me-1"></i>
+                                                    Завантажити
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 <div class="row mt-3">
                                     <div class="col-md-12">
                                         <div id="worldbank-indicators-chart" style="height: 500px;"></div>
@@ -413,14 +465,17 @@
                                 </div>
                                 <div class="row mt-3">
                                     <div class="col-md-12">
+                                        <div class="mb-2 text-muted small">
+                                            Валюта показників: <span class="badge bg-secondary">USD</span> <span class="ms-1">(за даними Світового банку)</span>
+                                        </div>
                                         <div class="table-responsive">
                                             <table id="worldbank-indicators-table" class="table table-striped">
                                                 <thead>
                                                     <tr>
                                                         <th>Країна</th>
                                                         <th>Рік</th>
-                                                        <th>ВВП</th>
-                                                        <th>ВВП на душу</th>
+                                                        <th>ВВП (USD)</th>
+                                                        <th>ВВП на душу (USD)</th>
                                                         <th>Інфляція</th>
                                                         <th>Безробіття</th>
                                                     </tr>
@@ -649,55 +704,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Графіки -->
-        <div class="row">
-            <!-- Графік продажів у часі -->
-            <div class="col-md-6">
-                <div class="chart-container">
-                    <div class="chart-title">
-                        <i class="fas fa-chart-line me-2"></i>
-                        Динаміка продажів
-                    </div>
-                    <div id="sales-chart" style="height: 400px;"></div>
-                </div>
-            </div>
-            
-            <!-- Графік продажів за продуктами -->
-            <div class="col-md-6">
-                <div class="chart-container">
-                    <div class="chart-title">
-                        <i class="fas fa-chart-bar me-2"></i>
-                        Топ продуктів
-                    </div>
-                    <div id="products-chart" style="height: 400px;"></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <!-- Графік продажів за регіонами -->
-            <div class="col-md-6">
-                <div class="chart-container">
-                    <div class="chart-title">
-                        <i class="fas fa-chart-pie me-2"></i>
-                        Розподіл за регіонами
-                    </div>
-                    <div id="regions-chart" style="height: 400px;"></div>
-                </div>
-            </div>
-            
-            <!-- Графік рентабельності -->
-            <div class="col-md-6">
-                <div class="chart-container">
-                    <div class="chart-title">
-                        <i class="fas fa-chart-area me-2"></i>
-                        Рентабельність продуктів
-                    </div>
-                    <div id="profitability-chart" style="height: 400px;"></div>
                 </div>
             </div>
         </div>
@@ -1598,26 +1604,47 @@
                 chartData[country][year] = row;
             });
 
-            // Створюємо графік
+            // Створюємо графік (більш наглядний вигляд)
             const traces = [];
             Object.entries(chartData).forEach(([country, years]) => {
                 const sortedYears = Object.keys(years).sort();
                 const gdpData = sortedYears.map(year => years[year].GDP || 0);
-                
+
                 traces.push({
                     x: sortedYears,
                     y: gdpData,
                     name: country,
                     type: 'scatter',
-                    mode: 'lines+markers'
+                    mode: 'lines+markers',
+                    line: { shape: 'spline', width: 3 },
+                    marker: { size: 6 },
+                    hovertemplate: `${country}<br>Рік: %{x}<br>ВВП: %{y:,.2f} USD<extra></extra>`
                 });
             });
 
+            // Динамічний діапазон осі Y
+            let yMin = Infinity;
+            let yMax = -Infinity;
+            traces.forEach(trace => {
+                (trace.y || []).forEach(val => {
+                    if (val !== null && val !== undefined) {
+                        if (val < yMin) yMin = val;
+                        if (val > yMax) yMax = val;
+                    }
+                });
+            });
+            const yRange = (yMax - yMin) || 1;
+            const yBuffer = yRange * 0.1;
+            const finalYMin = yMin === Infinity ? 0 : yMin - yBuffer;
+            const finalYMax = yMax === -Infinity ? 1 : yMax + yBuffer;
+
             const layout = {
                 title: 'ВВП країн у часі',
-                xaxis: { title: 'Рік' },
-                yaxis: { title: 'ВВП (долари США)' },
-                hovermode: 'closest'
+                xaxis: { title: 'Рік', rangeslider: { visible: true } },
+                yaxis: { title: 'ВВП (USD)', tickformat: ',.2s', gridcolor: '#e9ecef', range: [finalYMin, finalYMax] },
+                hovermode: 'x unified',
+                legend: { orientation: 'h', y: -0.2 },
+                margin: { t: 40, r: 20, l: 60, b: 60 }
             };
 
             Plotly.newPlot('worldbank-indicators-chart', traces, layout);
