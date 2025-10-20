@@ -277,7 +277,7 @@
                     </div>
                     <div id="worldbank-panel">
                         <!-- Статус даних Світового банку -->
-                        <div class="alert alert-info d-flex align-items-center mb-3" id="worldbank-status-alert" style="display: none !important;">
+                        <div class="alert alert-info d-flex align-items-center mb-3" id="worldbank-status-alert" style="display: none;">
                             <i class="fas fa-info-circle me-2"></i>
                             <div>
                                 <strong>Статус даних:</strong> <span id="worldbank-status-text">Завантаження...</span>
@@ -1696,9 +1696,11 @@
                 } else {
                     console.error('Помилка відповіді:', result);
                     showError(result.detail || 'Помилка завантаження нормалізованих даних');
+                    showWorldBankStatus('error', 'Дані недоступні', 'Не вдалося завантажити дані з API Світового банку.');
                 }
             } catch (error) {
                 showError('Помилка завантаження нормалізованих даних: ' + error.message);
+                showWorldBankStatus('error', 'Помилка завантаження', 'Не вдалося завантажити нормалізовані дані: ' + error.message);
             } finally {
                 hideLoading();
             }
@@ -1829,9 +1831,11 @@
                     }
                 } else {
                     showError(result.detail || "Помилка аналізу економічного здоров'я");
+                    showWorldBankStatus('error', 'Дані недоступні', 'Не вдалося отримати аналіз економічного здоров\'я.');
                 }
             } catch (error) {
                 showError("Помилка аналізу економічного здоров'я: " + error.message);
+                showWorldBankStatus('error', 'Помилка завантаження', 'Не вдалося проаналізувати економічне здоров\'я: ' + error.message);
             } finally {
                 hideLoading();
             }
@@ -2066,11 +2070,12 @@
         async function checkWorldBankDataStatus() {
             try {
                 const response = await fetch('/api/worldbank/indicators?start_year=2020&end_year=2023');
-                const data = await response.json();
+                const payload = await response.json();
+                const rows = (payload && payload.data) ? payload.data : payload;
                 
                 // Перевіряємо чи дані виглядають як зразкові
-                if (data && data.length > 0) {
-                    const firstItem = data[0];
+                if (rows && rows.length > 0) {
+                    const firstItem = rows[0];
                     // Зразкові дані мають певні характеристики
                     if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
                         showWorldBankStatus('warning', 
