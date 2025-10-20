@@ -1,0 +1,18 @@
+# FastAPI та веб-сервер
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+
+# Обробка даних
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Генерація демо-даних
+faker>=19.0.0
+python-dateutil>=2.8.0
+
+# Інтерактивна візуалізація
+plotly>=5.15.0
+
+# Додаткові залежності
+jinja2>=3.1.0
+python-multipart>=0.0.5

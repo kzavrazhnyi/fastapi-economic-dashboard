@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Економетричний Дашборд - Торгівельно-виробниче підприємство</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            color: #2c3e50 !important;
+        }
+        
+        .kpi-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .kpi-card.success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .kpi-card.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .kpi-card.info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .kpi-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            color: #2c3e50;
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .btn-custom {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навігаційна панель -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>
+                Економетричний Дашборд
+            </a>
+            <div class="navbar-nav ms-auto">
+                <button class="btn btn-custom" onclick="regenerateData()">
+                    <i class="fas fa-sync-alt me-2"></i>
+                    Оновити дані
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- KPI Панель -->
+        <div class="row" id="kpi-panel">
+            <div class="col-md-3">
+                <div class="kpi-card success">
+                    <div class="kpi-value" id="total-revenue">₴0</div>
+                    <div class="kpi-label">
+                        <i class="fas fa-money-bill-wave me-2"></i>
+                        Загальна виручка
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card warning">
+                    <div class="kpi-value" id="total-profit">₴0</div>
+                    <div class="kpi-label">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Загальний прибуток
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card info">
+                    <div class="kpi-value" id="total-sales">0</div>
+                    <div class="kpi-label">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Кількість продажів
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="profit-margin">0%</div>
+                    <div class="kpi-label">
+                        <i class="fas fa-percentage me-2"></i>
+                        Середня маржа
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Фільтри -->
+        <div class="filter-section">
+            <h5 class="mb-3">
+                <i class="fas fa-filter me-2"></i>
+                Фільтри даних
+            </h5>
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Початкова дата</label>
+                    <input type="date" class="form-control" id="start-date">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Кінцева дата</label>
+                    <input type="date" class="form-control" id="end-date">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Категорія</label>
+                    <select class="form-select" id="category-filter">
+                        <option value="">Всі категорії</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Регіон</label>
+                    <select class="form-select" id="region-filter">
+                        <option value="">Всі регіони</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <button class="btn btn-custom" onclick="applyFilters()">
+                        <i class="fas fa-search me-2"></i>
+                        Застосувати фільтри
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" onclick="clearFilters()">
+                        <i class="fas fa-times me-2"></i>
+                        Очистити
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Панель перегляду файлів -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-database me-2"></i>
+                        Перегляд файлів даних
+                    </div>
+                    <div id="files-panel">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6>Файли даних</h6>
+                                <div id="files-list" class="list-group">
+                                    <!-- Список файлів буде завантажений тут -->
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <h6>Вміст файлу</h6>
+                                <div id="file-content">
+                                    <p class="text-muted">Оберіть файл для перегляду</p>
+                                </div>
+                                <div id="file-pagination" class="mt-3">
+                                    <!-- Пагінація буде тут -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Графіки -->
+        <div class="row">
+            <!-- Графік продажів у часі -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Динаміка продажів
+                    </div>
+                    <div id="sales-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+            
+            <!-- Графік продажів за продуктами -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Топ продуктів
+                    </div>
+                    <div id="products-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Графік продажів за регіонами -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Розподіл за регіонами
+                    </div>
+                    <div id="regions-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+            
+            <!-- Графік рентабельності -->
+            <div class="col-md-6">
+                <div class="chart-container">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-area me-2"></i>
+                        Рентабельність продуктів
+                    </div>
+                    <div id="profitability-chart" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Глобальні змінні
+        let currentData = {
+            sales: [],
+            trends: [],
+            profit: [],
+            stats: {}
+        };
+
+        // Ініціалізація сторінки
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInitialData();
+            setupDateFilters();
+            loadFilesList();
+        });
+
+        // Завантаження початкових даних
+        async function loadInitialData() {
+            try {
+                showLoading();
+                
+                // Завантажуємо всі дані паралельно
+                const [salesRes, trendsRes, profitRes, statsRes, categoriesRes, regionsRes] = await Promise.all([
+                    fetch('/api/sales?limit=5000'),
+                    fetch('/api/trends'),
+                    fetch('/api/profit'),
+                    fetch('/api/stats'),
+                    fetch('/api/categories'),
+                    fetch('/api/regions')
+                ]);
+
+                currentData.sales = await salesRes.json();
+                currentData.trends = await trendsRes.json();
+                currentData.profit = await profitRes.json();
+                currentData.stats = await statsRes.json();
+
+                // Заповнюємо фільтри
+                const categories = await categoriesRes.json();
+                const regions = await regionsRes.json();
+                
+                populateSelect('category-filter', categories.categories);
+                populateSelect('region-filter', regions.regions);
+
+                // Оновлюємо інтерфейс
+                updateKPIPanel();
+                updateCharts();
+                
+                hideLoading();
+            } catch (error) {
+                console.error('Помилка завантаження даних:', error);
+                showError('Помилка завантаження даних: ' + error.message);
+            }
+        }
+
+        // Заповнення select елементів
+        function populateSelect(selectId, data) {
+            const select = document.getElementById(selectId);
+            if (data && Array.isArray(data)) {
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item;
+                    option.textContent = item.charAt(0).toUpperCase() + item.slice(1);
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        // Налаштування фільтрів дат
+        function setupDateFilters() {
+            const today = new Date();
+            const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+            
+            document.getElementById('end-date').value = today.toISOString().split('T')[0];
+            document.getElementById('start-date').value = lastMonth.toISOString().split('T')[0];
+        }
+
+        // Оновлення KPI панелі
+        function updateKPIPanel() {
+            const stats = currentData.stats;
+            
+            document.getElementById('total-revenue').textContent = formatCurrency(stats.total_revenue);
+            document.getElementById('total-profit').textContent = formatCurrency(stats.total_profit);
+            document.getElementById('total-sales').textContent = formatNumber(stats.total_sales);
+            document.getElementById('profit-margin').textContent = formatPercentage(stats.avg_profit_margin);
+        }
+
+        // Оновлення всіх графіків
+        function updateCharts() {
+            updateSalesChart();
+            updateProductsChart();
+            updateRegionsChart();
+            updateProfitabilityChart();
+        }
+
+        // Графік продажів у часі
+        function updateSalesChart() {
+            const trends = currentData.trends;
+            
+            if (!trends || trends.length === 0) {
+                document.getElementById('sales-chart').innerHTML = '<p>Немає даних для відображення</p>';
+                return;
+            }
+            
+            const trace = {
+                x: trends.map(t => t.date),
+                y: trends.map(t => t.total_revenue),
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'Виручка',
+                line: { color: '#667eea', width: 3 },
+                marker: { size: 6 }
+            };
+
+            const layout = {
+                title: '',
+                xaxis: { title: 'Дата' },
+                yaxis: { title: 'Виручка (₴)' },
+                hovermode: 'closest',
+                showlegend: false,
+                margin: { t: 0, b: 50, l: 50, r: 20 }
+            };
+
+            Plotly.newPlot('sales-chart', [trace], layout, {responsive: true});
+        }
+
+        // Графік топ продуктів
+        function updateProductsChart() {
+            const sales = currentData.sales;
+            
+            if (!sales || sales.length === 0) {
+                document.getElementById('products-chart').innerHTML = '<p>Немає даних для відображення</p>';
+                return;
+            }
+            
+            // Групуємо за продуктами
+            const productRevenue = {};
+            sales.forEach(sale => {
+                productRevenue[sale.product_name] = (productRevenue[sale.product_name] || 0) + sale.total_revenue;
+            });
+
+            // Сортуємо та беремо топ-10
+            const topProducts = Object.entries(productRevenue)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+
+            const trace = {
+                x: topProducts.map(([name]) => name.length > 20 ? name.substring(0, 20) + '...' : name),
+                y: topProducts.map(([,revenue]) => revenue),
+                type: 'bar',
+                marker: { color: '#38ef7d' }
+            };
+
+            const layout = {
+                title: '',
+                xaxis: { title: 'Продукт' },
+                yaxis: { title: 'Виручка (₴)' },
+                margin: { t: 0, b: 100, l: 50, r: 20 }
+            };
+
+            Plotly.newPlot('products-chart', [trace], layout, {responsive: true});
+        }
+
+        // Графік продажів за регіонами
+        function updateRegionsChart() {
+            const sales = currentData.sales;
+            
+            // Групуємо за регіонами
+            const regionRevenue = {};
+            sales.forEach(sale => {
+                regionRevenue[sale.region] = (regionRevenue[sale.region] || 0) + sale.total_revenue;
+            });
+
+            const trace = {
+                labels: Object.keys(regionRevenue).map(r => r.charAt(0).toUpperCase() + r.slice(1)),
+                values: Object.values(regionRevenue),
+                type: 'pie',
+                marker: {
+                    colors: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe']
+                }
+            };
+
+            const layout = {
+                title: '',
+                margin: { t: 0, b: 50, l: 50, r: 50 }
+            };
+
+            Plotly.newPlot('regions-chart', [trace], layout, {responsive: true});
+        }
+
+        // Графік рентабельності
+        function updateProfitabilityChart() {
+            const profit = currentData.profit;
+            
+            // Сортуємо за рентабельністю
+            const sortedProfit = profit.sort((a, b) => b.profit_percentage - a.profit_percentage).slice(0, 10);
+
+            const trace = {
+                x: sortedProfit.map(p => p.product_name.length > 15 ? p.product_name.substring(0, 15) + '...' : p.product_name),
+                y: sortedProfit.map(p => p.profit_percentage),
+                type: 'bar',
+                marker: { color: '#f5576c' }
+            };
+
+            const layout = {
+                title: '',
+                xaxis: { title: 'Продукт' },
+                yaxis: { title: 'Рентабельність (%)' },
+                margin: { t: 0, b: 100, l: 50, r: 20 }
+            };
+
+            Plotly.newPlot('profitability-chart', [trace], layout, {responsive: true});
+        }
+
+        // Застосування фільтрів
+        async function applyFilters() {
+            try {
+                showLoading();
+                
+                const params = new URLSearchParams();
+                
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+                const category = document.getElementById('category-filter').value;
+                const region = document.getElementById('region-filter').value;
+                
+                if (startDate) params.append('start_date', startDate);
+                if (endDate) params.append('end_date', endDate);
+                if (category) params.append('category', category);
+                if (region) params.append('region', region);
+                
+                params.append('limit', '5000');
+                
+                const response = await fetch(`/api/sales?${params}`);
+                currentData.sales = await response.json();
+                
+                // Оновлюємо статистику
+                const statsResponse = await fetch('/api/stats');
+                currentData.stats = await statsResponse.json();
+                
+                updateKPIPanel();
+                updateCharts();
+                
+                hideLoading();
+            } catch (error) {
+                console.error('Помилка застосування фільтрів:', error);
+                showError('Помилка застосування фільтрів: ' + error.message);
+            }
+        }
+
+        // Очищення фільтрів
+        function clearFilters() {
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            document.getElementById('category-filter').value = '';
+            document.getElementById('region-filter').value = '';
+            
+            loadInitialData();
+        }
+
+        // Регенерація даних
+        async function regenerateData() {
+            try {
+                showLoading();
+                
+                const response = await fetch('/api/regenerate', { method: 'POST' });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    await loadInitialData();
+                    showSuccess('Дані успішно оновлено!');
+                } else {
+                    throw new Error(result.detail || 'Помилка регенерації даних');
+                }
+            } catch (error) {
+                console.error('Помилка регенерації даних:', error);
+                showError('Помилка регенерації даних: ' + error.message);
+            }
+        }
+
+        // Допоміжні функції
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('uk-UA', {
+                style: 'currency',
+                currency: 'UAH',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function formatNumber(number) {
+            return new Intl.NumberFormat('uk-UA').format(number);
+        }
+
+        function formatPercentage(percentage) {
+            return percentage.toFixed(1) + '%';
+        }
+
+        function showLoading() {
+            document.body.style.opacity = '0.7';
+            document.body.style.pointerEvents = 'none';
+        }
+
+        function hideLoading() {
+            document.body.style.opacity = '1';
+            document.body.style.pointerEvents = 'auto';
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.container').insertBefore(errorDiv, document.querySelector('.container').firstChild);
+            
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'alert alert-success';
+            successDiv.textContent = message;
+            document.querySelector('.container').insertBefore(successDiv, document.querySelector('.container').firstChild);
+            
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        // Функції для роботи з файлами
+        let currentFile = null;
+        let currentOffset = 0;
+        const pageSize = 50;
+
+        async function loadFilesList() {
+            try {
+                const response = await fetch('/api/files');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                const filesList = document.getElementById('files-list');
+                filesList.innerHTML = '';
+                
+                if (result.files && Array.isArray(result.files)) {
+                    result.files.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'list-group-item list-group-item-action';
+                    fileItem.style.cursor = 'pointer';
+                    fileItem.innerHTML = `
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${file.name}</h6>
+                            <div>
+                                <button class="btn btn-sm btn-outline-info me-2" onclick="event.stopPropagation(); showFileStats('${file.name}')" title="Статистика">
+                                    <i class="fas fa-chart-bar"></i>
+                                </button>
+                                <small>${formatFileSize(file.size)}</small>
+                            </div>
+                        </div>
+                        <p class="mb-1">Модифіковано: ${new Date(file.modified).toLocaleString('uk-UA')}</p>
+                    `;
+                    
+                    fileItem.addEventListener('click', () => loadFileContent(file.name));
+                    filesList.appendChild(fileItem);
+                });
+                } else {
+                    filesList.innerHTML = '<div class="list-group-item text-muted">Файли не знайдені</div>';
+                }
+            } catch (error) {
+                console.error('Помилка завантаження списку файлів:', error);
+                showError('Помилка завантаження списку файлів: ' + error.message);
+                document.getElementById('files-list').innerHTML = '<div class="list-group-item text-danger">Помилка завантаження файлів</div>';
+            }
+        }
+
+        async function loadFileContent(filename, offset = 0) {
+            try {
+                currentFile = filename;
+                currentOffset = offset;
+                
+                const response = await fetch(`/api/files/${filename}?limit=${pageSize}&offset=${offset}`);
+                const result = await response.json();
+                
+                displayFileContent(result);
+                updatePagination(result);
+            } catch (error) {
+                console.error('Помилка завантаження вмісту файлу:', error);
+                showError('Помилка завантаження вмісту файлу: ' + error.message);
+            }
+        }
+
+        function displayFileContent(fileData) {
+            const contentDiv = document.getElementById('file-content');
+            
+            if (!fileData.data || fileData.data.length === 0) {
+                contentDiv.innerHTML = '<p class="text-muted">Файл порожній</p>';
+                return;
+            }
+            
+            // Створюємо таблицю
+            let tableHtml = `
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                ${fileData.columns.map(col => `<th>${col}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            fileData.data.forEach(row => {
+                tableHtml += '<tr>';
+                fileData.columns.forEach(col => {
+                    const value = row[col];
+                    const displayValue = value === null || value === undefined ? '-' : value;
+                    tableHtml += `<td>${displayValue}</td>`;
+                });
+                tableHtml += '</tr>';
+            });
+            
+            tableHtml += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        Показано ${fileData.offset + 1}-${fileData.offset + fileData.data.length} з ${fileData.total_rows} записів
+                    </small>
+                </div>
+            `;
+            
+            contentDiv.innerHTML = tableHtml;
+        }
+
+        function updatePagination(fileData) {
+            const paginationDiv = document.getElementById('file-pagination');
+            const totalPages = Math.ceil(fileData.total_rows / pageSize);
+            const currentPage = Math.floor(fileData.offset / pageSize) + 1;
+            
+            if (totalPages <= 1) {
+                paginationDiv.innerHTML = '';
+                return;
+            }
+            
+            let paginationHtml = '<nav><ul class="pagination pagination-sm">';
+            
+            // Кнопка "Попередня"
+            if (currentPage > 1) {
+                paginationHtml += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="loadFileContent('${currentFile}', ${(currentPage - 2) * pageSize})">Попередня</a>
+                    </li>
+                `;
+            }
+            
+            // Номери сторінок
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const isActive = i === currentPage ? 'active' : '';
+                paginationHtml += `
+                    <li class="page-item ${isActive}">
+                        <a class="page-link" href="#" onclick="loadFileContent('${currentFile}', ${(i - 1) * pageSize})">${i}</a>
+                    </li>
+                `;
+            }
+            
+            // Кнопка "Наступна"
+            if (currentPage < totalPages) {
+                paginationHtml += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="loadFileContent('${currentFile}', ${currentPage * pageSize})">Наступна</a>
+                    </li>
+                `;
+            }
+            
+            paginationHtml += '</ul></nav>';
+            paginationDiv.innerHTML = paginationHtml;
+        }
+
+        async function showFileStats(filename) {
+            try {
+                const response = await fetch(`/api/files/${filename}/stats`);
+                const stats = await response.json();
+                
+                let statsHtml = `
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Статистика файлу: ${stats.filename}</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Рядків:</strong> ${stats.total_rows.toLocaleString()}</p>
+                                    <p><strong>Колонок:</strong> ${stats.total_columns}</p>
+                                    <p><strong>Розмір в пам'яті:</strong> ${formatFileSize(stats.memory_usage)}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Колонки:</strong></p>
+                                    <ul class="list-unstyled">
+                                        ${stats.columns.map(col => `<li><code>${col}</code> (${stats.data_types[col]})</li>`).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                `;
+                
+                if (stats.numeric_stats) {
+                    statsHtml += `
+                        <div class="mt-3">
+                            <h6>Статистика числових колонок:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Колонка</th>
+                                            <th>Мін</th>
+                                            <th>Макс</th>
+                                            <th>Середнє</th>
+                                            <th>Медіана</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+                    
+                    Object.keys(stats.numeric_stats).forEach(col => {
+                        const colStats = stats.numeric_stats[col];
+                        statsHtml += `
+                            <tr>
+                                <td><code>${col}</code></td>
+                                <td>${colStats.min?.toFixed(2) || '-'}</td>
+                                <td>${colStats.max?.toFixed(2) || '-'}</td>
+                                <td>${colStats.mean?.toFixed(2) || '-'}</td>
+                                <td>${colStats['50%']?.toFixed(2) || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    statsHtml += '</tbody></table></div>';
+                }
+                
+                statsHtml += '</div></div>';
+                
+                // Показуємо статистику в модальному вікні
+                const modalHtml = `
+                    <div class="modal fade" id="statsModal" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Статистика файлу</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    ${statsHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Видаляємо попередній модаль, якщо існує
+                const existingModal = document.getElementById('statsModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+                
+                // Додаємо новий модаль
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                
+                // Показуємо модаль
+                const modal = new bootstrap.Modal(document.getElementById('statsModal'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Помилка завантаження статистики файлу:', error);
+                showError('Помилка завантаження статистики файлу: ' + error.message);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
