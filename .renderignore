@@ -1,0 +1,48 @@
+# .renderignore
+# Файли та папки, які не потрібні на Render
+
+# Віртуальне середовище
+venv/
+env/
+.env
+
+# Python кеш
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE файли
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS файли
+.DS_Store
+Thumbs.db
+
+# Локальні дані
+data/
+*.log
+
+# Тестові файли
+test_*
+*_test.py
+tests/
+
+# Документація
+docs/
+*.md
+README.md
+
+# Git
+.git/
+.gitignore
+
+# Локальні скрипти
+start_server.bat
+start_server.ps1
+start_server_utf8.bat
+start_simple.py

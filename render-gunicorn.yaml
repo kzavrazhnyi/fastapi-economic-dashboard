@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: fastapi-economic-dashboard
+    name: fastapi-economic-dashboard-gunicorn
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: python run_server.py
+    startCommand: gunicorn -c gunicorn.conf.py app.main:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
