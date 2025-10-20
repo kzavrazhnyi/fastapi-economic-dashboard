@@ -129,8 +129,8 @@
         <div class="doc-section">
             <h2><i class="fas fa-info-circle me-2 text-primary"></i>Огляд проєкту</h2>
             <p class="lead">
-                Економетричний дашборд для торгівельно-виробничого підприємства з інтеграцією даних Світового банку.
-                Система надає інтерактивну візуалізацію економічних показників, аналіз трендів та порівняння країн.
+                Економетричний дашборд для торгівельно-виробничого підприємства з інтеграцією даних Світового банку та ринку криптовалют (CoinGecko).
+                Система надає інтерактивну візуалізацію економічних показників, аналіз трендів, порівняння країн та огляд ринку криптовалют.
             </p>
             
             <h4>Основні можливості:</h4>
@@ -138,6 +138,7 @@
                 <li>Генерація демо-даних з економетричної статистики</li>
                 <li>Інтерактивні графіки та діаграми</li>
                 <li>Інтеграція з API Світового банку</li>
+                <li>Панель ринку криптовалют (CoinGecko): топ-100, валюти USD/UAH/EUR, підказки</li>
                 <li>Нормалізація та конвертація валют</li>
                 <li>Аналіз економічного здоров'я країн</li>
                 <li>Перегляд та аналіз CSV файлів</li>
@@ -167,6 +168,7 @@
                         <li><strong>NumPy</strong> - числові обчислення</li>
                         <li><strong>Faker</strong> - генерація демо-даних</li>
                         <li><strong>wbgapi</strong> - API Світового банку</li>
+                        <li><strong>CoinGecko (requests)</strong> - отримання ринкових крипто-даних</li>
                     </ul>
                 </div>
                 
@@ -198,53 +200,57 @@
             
             <div class="architecture-diagram">
                 <div class="mermaid">
-graph TB
-    subgraph "Frontend Layer"
-        UI[HTML/CSS/JS Interface]
-        Charts[Plotly.js Charts]
-        Bootstrap[Bootstrap UI]
-    end
-    
-    subgraph "API Layer"
-        FastAPI[FastAPI Server]
-        CORS[CORS Middleware]
-        Docs[Auto Documentation]
-    end
-    
-    subgraph "Business Logic"
-        DataGen[Data Generator]
-        WorldBank[World Bank Client]
-        Normalizer[Data Normalizer]
-        Analyzer[Economic Analyzer]
-    end
-    
-    subgraph "Data Layer"
-        CSV[CSV Files]
-        Cache[Memory Cache]
-        Sample[Sample Data]
-    end
-    
-    subgraph "External Services"
-        WBAPI[World Bank API]
-        Render[Render.com Hosting]
-    end
-    
-    UI --> FastAPI
-    Charts --> FastAPI
-    Bootstrap --> UI
-    
-    FastAPI --> DataGen
-    FastAPI --> WorldBank
-    FastAPI --> Normalizer
-    FastAPI --> Analyzer
-    
-    DataGen --> CSV
-    WorldBank --> WBAPI
-    WorldBank --> Sample
-    Normalizer --> Cache
-    Analyzer --> Cache
-    
-    FastAPI --> Render
+flowchart TB
+  subgraph Frontend[Frontend]
+    UI[HTML/CSS/JS]
+    Charts[Plotly.js]
+    Bootstrap[Bootstrap]
+  end
+
+  subgraph API[API]
+    App[FastAPI]
+    CORS[CORS]
+    Docs[OpenAPI Docs]
+  end
+
+  subgraph Logic[Business Logic]
+    Gen[Data Generator]
+    WB[WorldBank Client]
+    CG[CoinGecko Client]
+    Norm[Normalizer]
+    Anal[Analyzer]
+  end
+
+  subgraph Data[Data Layer]
+    CSV[CSV Files]
+    Cache[In‑Memory Cache]
+    Samples[Sample Data]
+  end
+
+  subgraph External[External Services]
+    WBAPI[World Bank API]
+    CGAPI[CoinGecko API]
+    Render[Render.com]
+  end
+
+  UI --> App
+  Charts --> App
+  Bootstrap --> UI
+
+  App --> Gen
+  App --> WB
+  App --> CG
+  App --> Norm
+  App --> Anal
+
+  Gen --> CSV
+  WB --> WBAPI
+  CG --> CGAPI
+  WB --> Samples
+  Norm --> Cache
+  Anal --> Cache
+
+  App --> Render
                 </div>
             </div>
         </div>
@@ -272,6 +278,11 @@ graph TB
             <div class="api-endpoint">GET /api/worldbank/economic-health - Аналіз здоров'я</div>
             <div class="api-endpoint">GET /api/worldbank/comparison - Порівняння країн</div>
             <div class="api-endpoint">GET /api/worldbank/trends/{country} - Тренди країни</div>
+
+            <h4>Криптовалюти (CoinGecko):</h4>
+            <div class="api-endpoint">GET /api/crypto/markets?currency=usd&per_page=100 - Ринок (топ-100)</div>
+            <div class="api-endpoint">GET /api/crypto/coins/{coin_id}/history?currency=usd&days=30 - Історія монети</div>
+            <div class="api-endpoint">GET /api/crypto/global - Глобальні метрики (total market cap, BTC dominance)</div>
         </div>
 
         <!-- Логічна схема даних -->

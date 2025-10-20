@@ -82,3 +82,16 @@ class StatsData(BaseModel):
     top_product: str
     top_region: str
     inventory_turnover: float
+
+
+# Crypto models
+class CoinMarketData(BaseModel):
+    id: str
+    symbol: str
+    name: str
+    image: str
+    current_price: float
+    market_cap: Optional[int] = None
+    market_cap_rank: Optional[int] = None
+    total_volume: Optional[float] = None
+    price_change_percentage_24h: Optional[float] = None

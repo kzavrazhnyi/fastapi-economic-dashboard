@@ -1,0 +1,15 @@
+# Cursor Project Rules
+
+projectRules:
+  - description: Commits policy
+    rule: "Make Git commits ONLY when the user explicitly asks (e.g., 'зроби коміт', 'передай в гітхаб'). Do not commit automatically."
+  - description: Operating system
+    rule: "We work on Windows. Use PowerShell commands and syntax."
+  - description: Virtual environment
+    rule: "Always run inside Python venv (venv\\Scripts\\Activate.ps1)."
+  - description: Command separators
+    rule: "In PowerShell, use ';' instead of '&&'. The '&&' operator must not be used."
+  - description: Encoding
+    rule: "Ensure UTF-8 for files and console output where applicable."
+
+

@@ -4,6 +4,7 @@
 """
 
 import wbgapi as wb
+import requests
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -99,16 +100,22 @@ class WorldBankDataProvider:
                     labels=True,
                     skipBlanks=True
                 )
-                
-                # Перевіряємо чи дані не порожні
+
+                # Якщо порожньо – пробуємо HTTP fallback
                 if data.empty:
-                    print("API повернув порожні дані, використовуємо зразкові дані...")
-                    return self._get_sample_data()
-                
+                    print("WB wbgapi повернув порожні дані. Пробуємо HTTP fallback...")
+                    data = self._fetch_via_http(country_codes, indicator_codes, start_year, end_year)
+                    if data is None or data.empty:
+                        print("HTTP fallback теж не повернув даних. Використовуємо зразкові дані...")
+                        return self._get_sample_data()
+
             except Exception as api_error:
-                print(f"API помилка: {api_error}")
-                print("Використовуємо зразкові дані...")
-                return self._get_sample_data()
+                print(f"API помилка wbgapi: {api_error}")
+                print("Пробуємо HTTP fallback...")
+                data = self._fetch_via_http(country_codes, indicator_codes, start_year, end_year)
+                if data is None or data.empty:
+                    print("HTTP fallback не вдався. Використовуємо зразкові дані...")
+                    return self._get_sample_data()
             
             # Перетворюємо дані в зручний формат
             df = data.reset_index()
@@ -139,6 +146,74 @@ class WorldBankDataProvider:
             print(f"Помилка отримання даних зі Світового банку: {e}")
             print("Використовуємо зразкові дані...")
             return self._get_sample_data()
+
+    def _fetch_via_http(self, country_codes: List[str], indicator_codes: List[str], start_year: int, end_year: int) -> Optional[pd.DataFrame]:
+        """
+        HTTP fallback: напряму викликає World Bank API
+        Формат: https://api.worldbank.org/v2/country/{country}/indicator/{indicator}?date={start}:{end}&format=json&per_page=20000
+        Об'єднує результати по країнам та індикаторам у один DataFrame.
+        """
+        base_url = "https://api.worldbank.org/v2/country/{country}/indicator/{indicator}"
+        rows = []
+
+        # Невеликий ліміт ретраїв
+        def fetch_json(url, params, retries=2):
+            for attempt in range(retries + 1):
+                try:
+                    resp = requests.get(url, params=params, timeout=15)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    # Очікується список [meta, data]
+                    if isinstance(data, list) and len(data) == 2 and isinstance(data[1], list):
+                        return data[1]
+                except Exception:
+                    if attempt == retries:
+                        return None
+            return None
+
+        for country in country_codes:
+            for code in indicator_codes:
+                url = base_url.format(country=country.lower(), indicator=code)
+                params = {
+                    'date': f"{start_year}:{end_year}",
+                    'format': 'json',
+                    'per_page': 20000
+                }
+                data_items = fetch_json(url, params)
+                if not data_items:
+                    continue
+                for item in data_items:
+                    year = item.get('date')
+                    val = item.get('value')
+                    try:
+                        year_int = int(year)
+                    except Exception:
+                        continue
+                    rows.append({
+                        'Country': country,
+                        'Year': year_int,
+                        code: float(val) if val is not None else None
+                    })
+
+        if not rows:
+            return None
+
+        df = pd.DataFrame(rows)
+        # Приберемо NaN (з World Bank часто приходять null) — залишаємо None
+        df = df.where(pd.notnull(df), None)
+        # Зведемо по Country/Year, щоб об'єднати індикатори
+        df = df.groupby(['Country', 'Year'], as_index=False).first()
+
+        # Перейменуємо коди індикаторів у дружні назви, якщо відомі
+        code_to_name = {v: k for k, v in self.indicators.items()}
+        rename_map = {col: code_to_name.get(col, col) for col in df.columns if col not in ['Country', 'Year']}
+        df.rename(columns=rename_map, inplace=True)
+
+        # Додамо назви країн
+        df['Country_Name'] = df['Country'].map(self.countries).fillna(df['Country'])
+        # Впорядкуємо колонки
+        ordered_cols = ['Country', 'Country_Name', 'Year'] + [c for c in df.columns if c not in ['Country', 'Country_Name', 'Year']]
+        return df[ordered_cols]
     
     def get_country_comparison(self, countries: List[str], 
                              indicator: str = 'GDP_PER_CAPITA',

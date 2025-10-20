@@ -150,6 +150,57 @@
         </div>
     </div>
 
+<!-- Панель криптовалют -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="chart-container">
+            <div class="chart-title">
+                <i class="fab fa-bitcoin me-2"></i>
+                Огляд ринку криптовалют
+                <button class="btn btn-sm btn-outline-success ms-2" onclick="loadCryptoMarketData()" title="Оновити дані">
+                    <i class="fas fa-sync-alt"></i> Оновити
+                </button>
+                <div class="ms-3 d-inline-block">
+                    <select id="crypto-currency" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                        <option value="usd" selected>USD</option>
+                        <option value="uah">UAH</option>
+                        <option value="eur">EUR</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-4 mb-2">
+                <div class="small text-muted">
+                    <i class="fas fa-globe me-1"></i>
+                    Загальна капіталізація ринку: <strong id="crypto-global-mcap">—</strong>
+                </div>
+                <div class="small text-muted">
+                    <i class="fab fa-btc me-1"></i>
+                    Домінація BTC: <strong id="crypto-global-btc">—</strong>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>#</th>
+                            <th>Назва</th>
+                            <th>Ціна</th>
+                            <th>24г (%)</th>
+                            <th>Ринкова капіталізація</th>
+                            <th>Об'єм (24г)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="crypto-market-table"></tbody>
+                </table>
+            </div>
+            <div class="mt-2 small text-muted">
+                Джерело даних: <a href="https://www.coingecko.com/en/api/documentation" target="_blank" rel="noopener noreferrer">CoinGecko API</a>. Дані оновлюються з публічного API без ключа.
+            </div>
+        </div>
+    </div>
+    
+</div>
     <div class="container mt-4">
         <!-- KPI Панель -->
         <div class="row" id="kpi-panel">
@@ -277,11 +328,11 @@
                     </div>
                     <div id="worldbank-panel">
                         <!-- Статус даних Світового банку -->
-                        <div class="alert alert-info d-flex align-items-center mb-3" id="worldbank-status-alert" style="display: none;">
+                        <div class="alert alert-info d-flex align-items-center mb-3" id="worldbank-status-alert" style="display: none;" aria-live="polite" aria-atomic="true">
                             <i class="fas fa-info-circle me-2"></i>
                             <div>
-                                <strong>Статус даних:</strong> <span id="worldbank-status-text">Завантаження...</span>
-                                <small class="d-block text-muted" id="worldbank-status-details"></small>
+                                <strong>Підказка:</strong> <span id="worldbank-status-text">Натисніть "Завантажити"</span>
+                                <small class="d-block text-muted" id="worldbank-status-details">Оберіть країни, показники та період</small>
                             </div>
                         </div>
                         <!-- Фільтри для даних Світового банку -->
@@ -685,9 +736,125 @@
             window.loadTrendsData = loadTrendsData;
             window.loadNormalizedData = loadNormalizedData;
             window.loadEconomicHealth = loadEconomicHealth;
+            window.loadCryptoMarketData = loadCryptoMarketData;
 
             loadFilesList();
+
+            // Авто-перезавантаження ринку при зміні валюти
+            const cryptoCur = document.getElementById('crypto-currency');
+            if (cryptoCur) {
+                cryptoCur.addEventListener('change', () => {
+                    loadCryptoMarketData();
+                });
+            }
         });
+        async function loadCryptoMarketData() {
+            try {
+                const curSel = document.getElementById('crypto-currency');
+                const cur = curSel ? curSel.value : 'usd';
+                const resp = await fetch(`/api/crypto/markets?currency=${encodeURIComponent(cur)}&per_page=100`);
+                const data = await resp.json();
+                const tableBody = document.getElementById('crypto-market-table');
+                tableBody.innerHTML = '';
+                data.forEach(coin => {
+                    const change24h = coin.price_change_percentage_24h;
+                    const colorClass = (typeof change24h === 'number' && !isNaN(change24h) && change24h >= 0) ? 'text-success' : 'text-danger';
+                    const symbol = (coin.symbol || '').toUpperCase();
+                    const currencyCode = (cur || 'usd').toUpperCase();
+                    const row = `
+                        <tr style="cursor:pointer" onclick="openCryptoCoin('${coin.id}', '${coin.name}', '${symbol}', '${cur}')">
+                            <td>${coin.market_cap_rank ?? ''}</td>
+                            <td>
+                                <img src="${coin.image}" width="20" height="20" class="me-2">
+                                <strong>${coin.name}</strong>
+                                <span class="text-muted">${symbol}</span>
+                            </td>
+                            <td>${formatCurrencyByCode(coin.current_price, currencyCode)}</td>
+                            <td class="${colorClass}">${(typeof change24h === 'number' && !isNaN(change24h)) ? change24h.toFixed(2) + '%' : 'N/A'}</td>
+                            <td>${formatCurrencyByCode(coin.market_cap || 0, currencyCode)}</td>
+                            <td>${formatCurrencyByCode(coin.total_volume || 0, currencyCode)}</td>
+                        </tr>
+                    `;
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+                // Оновити глобальні метрики (в USD)
+                await loadCryptoGlobal();
+            } catch (error) {
+                console.error('Помилка завантаження крипто-даних:', error);
+                showError('Не вдалося завантажити дані ринку криптовалют.');
+            }
+        }
+
+        async function loadCryptoGlobal() {
+            try {
+                const resp = await fetch('/api/crypto/global');
+                const payload = await resp.json();
+                const data = payload && payload.data ? payload.data : payload;
+                const mcapUsd = data.total_market_cap && data.total_market_cap.usd ? data.total_market_cap.usd : null;
+                const btcDom = data.market_cap_percentage && data.market_cap_percentage.btc ? data.market_cap_percentage.btc : null;
+                if (mcapUsd != null) {
+                    document.getElementById('crypto-global-mcap').textContent = formatCurrencyByCode(mcapUsd, 'USD');
+                }
+                if (btcDom != null) {
+                    document.getElementById('crypto-global-btc').textContent = btcDom.toFixed(2) + '%';
+                }
+            } catch (e) {
+                // не критично
+            }
+        }
+
+        async function openCryptoCoin(coinId, coinName, symbol, currencyCode) {
+            try {
+                const cur = (currencyCode || 'usd');
+                const resp = await fetch(`/api/crypto/coins/${coinId}/history?currency=${encodeURIComponent(cur)}&days=30`);
+                const data = await resp.json();
+                const prices = (data && data.prices) ? data.prices : [];
+                const x = prices.map(p => new Date(p[0]));
+                const y = prices.map(p => p[1]);
+                const trace = { x, y, type: 'scatter', mode: 'lines', line: { color: '#4facfe' } };
+                const layout = { title: `${coinName} (${symbol}) • останні 30 днів`, margin: { t: 40, r: 20, l: 50, b: 40 } };
+                // Створюємо модал, якщо його немає
+                let modalEl = document.getElementById('cryptoCoinModal');
+                if (!modalEl) {
+                    document.body.insertAdjacentHTML('beforeend', `
+                        <div class="modal fade" id="cryptoCoinModal" tabindex="-1" aria-hidden="true">
+                          <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title" id="crypto-coin-title">Деталі монети</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                <div id="crypto-coin-chart" style="height:400px;"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                    `);
+                    modalEl = document.getElementById('cryptoCoinModal');
+                }
+                document.getElementById('crypto-coin-title').textContent = `${coinName} (${symbol})`;
+                Plotly.newPlot('crypto-coin-chart', [trace], layout, { responsive: true });
+                const bsModal = new bootstrap.Modal(modalEl);
+                bsModal.show();
+            } catch (e) {
+                showError('Не вдалося завантажити історію ціни монети.');
+            }
+        }
+
+        // Окрема функція форматування валют з кодом (не конфліктує з глобальною UAH)
+        function formatCurrencyByCode(amount, currencyCode) {
+            try {
+                return new Intl.NumberFormat('uk-UA', {
+                    style: 'currency',
+                    currency: currencyCode || 'USD',
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(amount ?? 0);
+            } catch (e) {
+                return String(amount ?? 0);
+            }
+        }
 
         // Завантаження початкових даних
         async function loadInitialData() {
@@ -720,8 +887,7 @@
                 updateKPIPanel();
                 updateCharts();
                 
-                // Перевіряємо статус даних Світового банку
-                checkWorldBankDataStatus();
+                // Не перевіряємо статус автоматично при старті
                 
                 hideLoading();
             } catch (error) {
@@ -1348,12 +1514,35 @@
 
         async function loadWorldBankData() {
             try {
+                showWorldBankStatus('info', 'Завантаження...', 'Відправляємо запит до API');
                 const countries = Array.from(document.getElementById('worldbank-countries').selectedOptions)
                     .map(option => option.value);
                 const indicators = Array.from(document.getElementById('worldbank-indicators').selectedOptions)
                     .map(option => option.value);
                 const startYear = document.getElementById('worldbank-start-year').value;
                 const endYear = document.getElementById('worldbank-end-year').value;
+
+                // Валідація вибору
+                if (countries.length === 0 && indicators.length === 0) {
+                    showWorldBankStatus('warning', 'Потрібні параметри', 'Оберіть принаймні одну країну і один показник');
+                    showError('Оберіть країни та показники для завантаження');
+                    return;
+                }
+                if (countries.length === 0) {
+                    showWorldBankStatus('warning', 'Потрібні параметри', 'Оберіть принаймні одну країну');
+                    showError('Оберіть хоча б одну країну');
+                    return;
+                }
+                if (indicators.length === 0) {
+                    showWorldBankStatus('warning', 'Потрібні параметри', 'Оберіть принаймні один показник');
+                    showError('Оберіть хоча б один показник');
+                    return;
+                }
+                if (!startYear || !endYear || Number(startYear) > Number(endYear)) {
+                    showWorldBankStatus('warning', 'Невірний період', 'Перевірте значення років');
+                    showError('Невірний період: перевірте роки початку та завершення');
+                    return;
+                }
 
                 const params = new URLSearchParams();
                 if (countries.length > 0) params.append('countries', countries.join(','));
@@ -1369,22 +1558,25 @@
                 updateWorldBankIndicatorsTable(result);
                 
                 // Перевіряємо статус даних (індикатор у панелі Світового банку)
-                if (result && result.length > 0) {
-                    const firstItem = result[0];
+                const rows = (result && result.data) ? result.data : result;
+                const count = rows && rows.length ? rows.length : 0;
+                if (rows && count > 0) {
+                    const firstItem = rows[0];
                     if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
                         showWorldBankStatus('warning', 
                             'Використовуються зразкові дані', 
-                            'API Світового банку недоступний. Відображаються демонстраційні дані.');
+                            `Отримано записів: ${count}`);
                     } else {
                         showWorldBankStatus('success', 
                             'Дані з API Світового банку', 
-                            'Отримано реальні економічні дані.');
+                            `Отримано записів: ${count}`);
                     }
                 }
 
             } catch (error) {
                 console.error('Помилка завантаження даних Світового банку:', error);
                 showError('Помилка завантаження даних Світового банку: ' + error.message);
+                showWorldBankStatus('error', 'Помилка завантаження', error.message || 'Невідома помилка');
             }
         }
 
@@ -1683,14 +1875,15 @@
                     // Перевіряємо статус даних (індикатор у панелі Світового банку)
                     if (result.data && result.data.length > 0) {
                         const firstItem = result.data[0];
+                        const count = result.total_records || result.data.length;
                         if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
                             showWorldBankStatus('warning', 
                                 'Використовуються зразкові дані', 
-                                'API Світового банку недоступний. Відображаються демонстраційні дані.');
+                                `Отримано записів: ${count}`);
                         } else {
                             showWorldBankStatus('success', 
                                 'Дані з API Світового банку', 
-                                'Отримано реальні економічні дані.');
+                                `Отримано записів: ${count}`);
                         }
                     }
                 } else {
@@ -1824,14 +2017,15 @@
                     // Перевіряємо статус даних (індикатор у панелі Світового банку)
                     if (result.analysis && Object.keys(result.analysis).length > 0) {
                         const firstCountry = Object.values(result.analysis)[0];
+                        const count = Object.keys(result.analysis).length;
                         if (firstCountry.country_name === 'Ukraine' || firstCountry.country_name === 'USA') {
                             showWorldBankStatus('warning', 
                                 'Використовуються зразкові дані', 
-                                'API Світового банку недоступний. Відображаються демонстраційні дані.');
+                                `Опрацьовано країн: ${count}`);
                         } else {
                             showWorldBankStatus('success', 
                                 'Дані з API Світового банку', 
-                                'Отримано реальні економічні дані.');
+                                `Опрацьовано країн: ${count}`);
                         }
                     }
                 } else {

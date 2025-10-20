@@ -26,6 +26,7 @@ import pandas as pd
 from .models import SalesData, InventoryData, ProfitData, TrendData, StatsData
 from .data_generator import DataGenerator
 from .worldbank_client import WorldBankDataProvider
+from .crypto_client import CryptoDataProvider
 
 # Ініціалізація FastAPI додатку
 app = FastAPI(
@@ -448,12 +449,15 @@ async def get_worldbank_indicators(
             end_year=end_year
         )
         
+        # Замінюємо NaN/NaT на None для коректної JSON-серіалізації
+        safe_data = data.where(pd.notnull(data), None)
+        
         return {
-            "data": data.to_dict('records'),
-            "columns": data.columns.tolist(),
-            "total_records": len(data),
-            "countries": data['Country_Name'].unique().tolist() if not data.empty else [],
-            "years": sorted(data['Year'].unique().tolist()) if not data.empty else []
+            "data": safe_data.to_dict('records'),
+            "columns": safe_data.columns.tolist(),
+            "total_records": len(safe_data),
+            "countries": safe_data['Country_Name'].unique().tolist() if not safe_data.empty else [],
+            "years": sorted([y for y in safe_data['Year'].unique().tolist() if y is not None]) if not safe_data.empty else []
         }
     
     except Exception as e:
@@ -572,6 +576,7 @@ async def get_normalized_data(
         
         # Нормалізуємо дані
         normalized_data = provider.normalize_data(raw_data)
+        normalized_data = normalized_data.where(pd.notnull(normalized_data), None)
         
         # Конвертуємо валюту якщо потрібно
         if currency != "USD":
@@ -587,12 +592,12 @@ async def get_normalized_data(
                 if isinstance(value, (np.integer, np.int64, np.int32)):
                     record[col] = int(value)
                 elif isinstance(value, (np.floating, np.float64, np.float32)):
-                    record[col] = float(value)
+                    record[col] = float(value) if value is not None else None
                 elif isinstance(value, str):
                     # Переконуємося, що рядок правильно закодований
                     record[col] = value.encode('utf-8').decode('utf-8')
                 else:
-                    record[col] = str(value)
+                    record[col] = None if value is None else str(value)
             data_records.append(record)
         
         return {
@@ -674,6 +679,37 @@ async def get_currency_rates():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Помилка отримання курсів валют: {str(e)}")
 
+
+@app.get("/api/crypto/markets")
+async def get_crypto_markets(currency: str = 'usd', per_page: int = 100):
+    """Отримання ринкових даних для топ криптовалют."""
+    try:
+        provider = CryptoDataProvider()
+        data = await run_in_threadpool(provider.get_market_data, currency=currency, per_page=per_page)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/crypto/coins/{coin_id}/history")
+async def get_crypto_coin_history(coin_id: str, currency: str = 'usd', days: int = 30):
+    """Отримання історичних даних для графіка."""
+    try:
+        provider = CryptoDataProvider()
+        data = await run_in_threadpool(provider.get_coin_history, coin_id=coin_id, currency=currency, days=days)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/crypto/global")
+async def get_crypto_global():
+    """Глобальні метрики ринку криптовалют."""
+    try:
+        provider = CryptoDataProvider()
+        data = await run_in_threadpool(provider.get_global)
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
