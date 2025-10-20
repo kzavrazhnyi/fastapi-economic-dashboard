@@ -1236,10 +1236,10 @@
                         statsHtml += `
                             <tr>
                                 <td><code>${col}</code></td>
-                                <td>${colStats.min?.toFixed(2) || '-'}</td>
-                                <td>${colStats.max?.toFixed(2) || '-'}</td>
-                                <td>${colStats.mean?.toFixed(2) || '-'}</td>
-                                <td>${colStats['50%']?.toFixed(2) || '-'}</td>
+                <td>${typeof colStats.min === 'number' ? colStats.min.toFixed(2) : (colStats.min ? parseFloat(colStats.min).toFixed(2) : '-')}</td>
+                <td>${typeof colStats.max === 'number' ? colStats.max.toFixed(2) : (colStats.max ? parseFloat(colStats.max).toFixed(2) : '-')}</td>
+                <td>${typeof colStats.mean === 'number' ? colStats.mean.toFixed(2) : (colStats.mean ? parseFloat(colStats.mean).toFixed(2) : '-')}</td>
+                <td>${typeof colStats['50%'] === 'number' ? colStats['50%'].toFixed(2) : (colStats['50%'] ? parseFloat(colStats['50%']).toFixed(2) : '-')}</td>
                             </tr>
                         `;
                     });
@@ -1447,8 +1447,8 @@
                     <td>${row.Year}</td>
                     <td>${row.GDP ? row.GDP.toLocaleString() : '-'}</td>
                     <td>${row.GDP_PER_CAPITA ? row.GDP_PER_CAPITA.toLocaleString() : '-'}</td>
-                    <td>${row.INFLATION ? row.INFLATION.toFixed(2) + '%' : '-'}</td>
-                    <td>${row.UNEMPLOYMENT ? row.UNEMPLOYMENT.toFixed(2) + '%' : '-'}</td>
+                    <td>${(typeof row.INFLATION === 'number' ? row.INFLATION.toFixed(2) : (row.INFLATION ? parseFloat(row.INFLATION).toFixed(2) : '-'))}${(row.INFLATION || row.INFLATION === 0) ? '%' : ''}</td>
+                    <td>${(typeof row.UNEMPLOYMENT === 'number' ? row.UNEMPLOYMENT.toFixed(2) : (row.UNEMPLOYMENT ? parseFloat(row.UNEMPLOYMENT).toFixed(2) : '-'))}${(row.UNEMPLOYMENT || row.UNEMPLOYMENT === 0) ? '%' : ''}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1779,8 +1779,13 @@
             data.forEach(row => {
                 html += `<tr><td>${row.Country_Name}</td><td>${row.Year}</td>`;
                 Object.keys(normalizationInfo).forEach(indicator => {
-                    const value = row[indicator] !== null ? row[indicator].toFixed(2) : 'N/A';
-                    html += `<td>${value}</td>`;
+                    const raw = row[indicator];
+                    let valueText = 'N/A';
+                    if (raw !== null && raw !== undefined && raw !== '') {
+                        const num = typeof raw === 'number' ? raw : parseFloat(raw);
+                        valueText = isNaN(num) ? String(raw) : num.toFixed(2);
+                    }
+                    html += `<td>${valueText}</td>`;
                 });
                 html += '</tr>';
             });
