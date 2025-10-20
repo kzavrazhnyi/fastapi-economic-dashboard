@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Технічна документація - Економетричний Дашборд</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Mermaid для діаграм -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            color: #2c3e50 !important;
+        }
+        
+        .doc-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+            margin-bottom: 40px;
+        }
+        
+        .doc-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .tech-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .architecture-diagram {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .api-endpoint {
+            background: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 5px 0;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .feature-list li:before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .back-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навігаційна панель -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-chart-line me-2"></i>
+                Економетричний Дашборд
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link me-3" href="/docs" target="_blank">
+                    <i class="fas fa-book me-1"></i>
+                    API Docs
+                </a>
+                <a class="nav-link" href="/">
+                    <i class="fas fa-home me-1"></i>
+                    Головна
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Заголовок документації -->
+    <div class="doc-header">
+        <div class="container text-center">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-cogs me-3"></i>
+                Технічна документація
+            </h1>
+            <p class="lead">Повний опис архітектури та функціональності системи</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Огляд проєкту -->
+        <div class="doc-section">
+            <h2><i class="fas fa-info-circle me-2 text-primary"></i>Огляд проєкту</h2>
+            <p class="lead">
+                Економетричний дашборд для торгівельно-виробничого підприємства з інтеграцією даних Світового банку.
+                Система надає інтерактивну візуалізацію економічних показників, аналіз трендів та порівняння країн.
+            </p>
+            
+            <h4>Основні можливості:</h4>
+            <ul class="feature-list">
+                <li>Генерація демо-даних з економетричної статистики</li>
+                <li>Інтерактивні графіки та діаграми</li>
+                <li>Інтеграція з API Світового банку</li>
+                <li>Нормалізація та конвертація валют</li>
+                <li>Аналіз економічного здоров'я країн</li>
+                <li>Перегляд та аналіз CSV файлів</li>
+                <li>RESTful API з автоматичною документацією</li>
+            </ul>
+        </div>
+
+        <!-- Технічний стек -->
+        <div class="doc-section">
+            <h2><i class="fas fa-layer-group me-2 text-success"></i>Технічний стек</h2>
+            
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <h5><i class="fas fa-server me-2"></i>Backend</h5>
+                    <ul>
+                        <li><strong>FastAPI</strong> - веб-фреймворк</li>
+                        <li><strong>Uvicorn</strong> - ASGI сервер</li>
+                        <li><strong>Gunicorn</strong> - WSGI сервер для продакшену</li>
+                        <li><strong>Pydantic</strong> - валідація даних</li>
+                    </ul>
+                </div>
+                
+                <div class="tech-item">
+                    <h5><i class="fas fa-database me-2"></i>Обробка даних</h5>
+                    <ul>
+                        <li><strong>Pandas</strong> - аналіз даних</li>
+                        <li><strong>NumPy</strong> - числові обчислення</li>
+                        <li><strong>Faker</strong> - генерація демо-даних</li>
+                        <li><strong>wbgapi</strong> - API Світового банку</li>
+                    </ul>
+                </div>
+                
+                <div class="tech-item">
+                    <h5><i class="fas fa-paint-brush me-2"></i>Frontend</h5>
+                    <ul>
+                        <li><strong>HTML5/CSS3</strong> - структура та стилі</li>
+                        <li><strong>Bootstrap 5</strong> - UI фреймворк</li>
+                        <li><strong>JavaScript</strong> - інтерактивність</li>
+                        <li><strong>Plotly.js</strong> - візуалізація</li>
+                    </ul>
+                </div>
+                
+                <div class="tech-item">
+                    <h5><i class="fas fa-cloud me-2"></i>Інфраструктура</h5>
+                    <ul>
+                        <li><strong>Python 3.11+</strong> - мова програмування</li>
+                        <li><strong>Git</strong> - контроль версій</li>
+                        <li><strong>GitHub</strong> - хостинг коду</li>
+                        <li><strong>Render.com</strong> - хостинг</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Архітектурна схема -->
+        <div class="doc-section">
+            <h2><i class="fas fa-sitemap me-2 text-warning"></i>Архітектурна схема</h2>
+            
+            <div class="architecture-diagram">
+                <div class="mermaid">
+graph TB
+    subgraph "Frontend Layer"
+        UI[HTML/CSS/JS Interface]
+        Charts[Plotly.js Charts]
+        Bootstrap[Bootstrap UI]
+    end
+    
+    subgraph "API Layer"
+        FastAPI[FastAPI Server]
+        CORS[CORS Middleware]
+        Docs[Auto Documentation]
+    end
+    
+    subgraph "Business Logic"
+        DataGen[Data Generator]
+        WorldBank[World Bank Client]
+        Normalizer[Data Normalizer]
+        Analyzer[Economic Analyzer]
+    end
+    
+    subgraph "Data Layer"
+        CSV[CSV Files]
+        Cache[Memory Cache]
+        Sample[Sample Data]
+    end
+    
+    subgraph "External Services"
+        WBAPI[World Bank API]
+        Render[Render.com Hosting]
+    end
+    
+    UI --> FastAPI
+    Charts --> FastAPI
+    Bootstrap --> UI
+    
+    FastAPI --> DataGen
+    FastAPI --> WorldBank
+    FastAPI --> Normalizer
+    FastAPI --> Analyzer
+    
+    DataGen --> CSV
+    WorldBank --> WBAPI
+    WorldBank --> Sample
+    Normalizer --> Cache
+    Analyzer --> Cache
+    
+    FastAPI --> Render
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints -->
+        <div class="doc-section">
+            <h2><i class="fas fa-plug me-2 text-info"></i>API Endpoints</h2>
+            
+            <h4>Основні дані:</h4>
+            <div class="api-endpoint">GET /api/sales - Дані про продажі</div>
+            <div class="api-endpoint">GET /api/profit - Дані про прибуток</div>
+            <div class="api-endpoint">GET /api/trends - Трендові дані</div>
+            <div class="api-endpoint">GET /api/stats - Загальна статистика</div>
+            
+            <h4>Файли даних:</h4>
+            <div class="api-endpoint">GET /api/files - Список файлів</div>
+            <div class="api-endpoint">GET /api/files/{filename} - Вміст файлу</div>
+            <div class="api-endpoint">GET /api/files/{filename}/stats - Статистика файлу</div>
+            <div class="api-endpoint">POST /api/regenerate - Регенерація даних</div>
+            
+            <h4>Світовий банк:</h4>
+            <div class="api-endpoint">GET /api/worldbank/countries - Список країн</div>
+            <div class="api-endpoint">GET /api/worldbank/indicators - Економічні показники</div>
+            <div class="api-endpoint">GET /api/worldbank/normalized - Нормалізовані дані</div>
+            <div class="api-endpoint">GET /api/worldbank/economic-health - Аналіз здоров'я</div>
+            <div class="api-endpoint">GET /api/worldbank/comparison - Порівняння країн</div>
+            <div class="api-endpoint">GET /api/worldbank/trends/{country} - Тренди країни</div>
+        </div>
+
+        <!-- Логічна схема даних -->
+        <div class="doc-section">
+            <h2><i class="fas fa-project-diagram me-2 text-danger"></i>Логічна схема даних</h2>
+            
+            <div class="architecture-diagram">
+                <div class="mermaid">
+erDiagram
+    SALES_DATA {
+        int id PK
+        string product_name
+        string category
+        string region
+        float quantity
+        float price
+        float revenue
+        date sale_date
+    }
+    
+    INVENTORY_DATA {
+        int id PK
+        string product_name
+        string category
+        string region
+        int current_stock
+        int min_threshold
+        float unit_cost
+        date last_updated
+    }
+    
+    PROFIT_DATA {
+        int id PK
+        string product_name
+        string category
+        string region
+        float revenue
+        float costs
+        float profit
+        float profit_margin
+        date period
+    }
+    
+    WORLD_BANK_DATA {
+        string country_code PK
+        string country_name
+        int year
+        float gdp
+        float gdp_per_capita
+        float inflation
+        float unemployment
+        float exports
+        float imports
+        float population
+        float life_expectancy
+    }
+    
+    NORMALIZED_DATA {
+        string country_code PK
+        string country_name
+        int year
+        float gdp_billions
+        float gdp_per_capita_usd
+        float inflation_percent
+        float unemployment_percent
+        float exports_billions
+        float imports_billions
+        float population_millions
+        string currency
+    }
+    
+    ECONOMIC_HEALTH {
+        string country_code PK
+        string country_name
+        float health_score
+        string health_level
+        json indicators
+        int latest_year
+    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Процеси обробки даних -->
+        <div class="doc-section">
+            <h2><i class="fas fa-cogs me-2 text-secondary"></i>Процеси обробки даних</h2>
+            
+            <div class="architecture-diagram">
+                <div class="mermaid">
+flowchart TD
+    Start([Початок]) --> CheckAPI{API доступний?}
+    
+    CheckAPI -->|Так| FetchData[Отримати дані з API]
+    CheckAPI -->|Ні| UseSample[Використати зразкові дані]
+    
+    FetchData --> ValidateData{Дані валідні?}
+    ValidateData -->|Так| ProcessData[Обробити дані]
+    ValidateData -->|Ні| UseSample
+    
+    UseSample --> ProcessData
+    ProcessData --> Normalize[Normalize Units]
+    
+    Normalize --> ConvertCurrency{Конвертувати валюту?}
+    ConvertCurrency -->|Так| CurrencyConv[Конвертація в USD]
+    ConvertCurrency -->|Ні| AnalyzeData
+    
+    CurrencyConv --> AnalyzeData[Аналіз економічного здоров'я]
+    AnalyzeData --> CacheData[Кешування результатів]
+    CacheData --> ReturnData[Повернути дані]
+    
+    ReturnData --> End([Кінець])
+                </div>
+            </div>
+        </div>
+
+        <!-- Налаштування деплою -->
+        <div class="doc-section">
+            <h2><i class="fas fa-rocket me-2 text-primary"></i>Налаштування деплою</h2>
+            
+            <h4>Локальний запуск:</h4>
+            <div class="api-endpoint">python start_simple.py</div>
+            
+            <h4>Render.com конфігурація:</h4>
+            <ul>
+                <li><strong>Build Command:</strong> pip install -r requirements.txt</li>
+                <li><strong>Start Command:</strong> python run_server.py</li>
+                <li><strong>Environment:</strong> Python 3.11</li>
+                <li><strong>Plan:</strong> Free/Starter</li>
+            </ul>
+            
+            <h4>Змінні середовища:</h4>
+            <ul>
+                <li><strong>PORT:</strong> Автоматично встановлюється Render</li>
+                <li><strong>RENDER:</strong> true (для продакшен режиму)</li>
+                <li><strong>PYTHON_VERSION:</strong> 3.11.0</li>
+            </ul>
+        </div>
+
+        <!-- Структура проєкту -->
+        <div class="doc-section">
+            <h2><i class="fas fa-folder-tree me-2 text-success"></i>Структура проєкту</h2>
+            
+            <pre><code>fastapi-economic-dashboard/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI додаток
+│   ├── models.py              # Pydantic моделі
+│   ├── data_generator.py     # Генератор демо-даних
+│   ├── worldbank_client.py   # Клієнт Світового банку
+│   └── static/
+│       ├── index.html         # Веб-інтерфейс
+│       └── docs.html          # Технічна документація
+├── data/                      # CSV файли з даними
+├── venv/                      # Віртуальне середовище
+├── requirements.txt           # Залежності Python
+├── run_server.py             # Скрипт запуску сервера
+├── start_simple.py           # Простий запуск
+├── gunicorn.conf.py          # Конфігурація Gunicorn
+├── render.yaml               # Конфігурація Render
+├── render-gunicorn.yaml      # Альтернативна конфігурація
+├── .renderignore             # Виключення для Render
+└── README.md                 # Документація проєкту</code></pre>
+        </div>
+    </div>
+
+    <!-- Кнопка повернення -->
+    <a href="/" class="btn btn-primary btn-lg back-btn">
+        <i class="fas fa-arrow-left me-2"></i>
+        Повернутися на головну
+    </a>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Ініціалізація Mermaid -->
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            },
+            er: {
+                useMaxWidth: true
+            }
+        });
+    </script>
+</body>
+</html>

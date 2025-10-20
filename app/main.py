@@ -95,6 +95,15 @@ async def read_root():
     except FileNotFoundError:
         return HTMLResponse(content="<h1>Файл index.html не знайдено</h1>")
 
+@app.get("/docs-page", response_class=HTMLResponse)
+async def read_docs():
+    """Сторінка технічної документації"""
+    try:
+        with open("app/static/docs.html", "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except FileNotFoundError:
+        return HTMLResponse(content="<h1>Файл docs.html не знайдено</h1>")
+
 
 @app.get("/api/sales")
 async def get_sales(
