@@ -74,17 +74,26 @@ class WorldBankDataProvider:
             if country_codes is None:
                 country_codes = list(self.countries.keys())
             
+            # Визначаємо індикатори: приймаємо як ключі (GDP, INFLATION) або вже коди (NY.GDP.MKTP.CD)
             if indicators is None:
-                indicators = list(self.indicators.values())
+                indicator_codes = list(self.indicators.values())
+                indicator_names = list(self.indicators.keys())
+            else:
+                # Мапимо дружні імена на коди; якщо прийшов вже код, залишаємо як є
+                indicator_codes = [self.indicators.get(ind, ind) for ind in indicators]
+                # Зворотна мапа код-> ім'я для перейменування колонок
+                code_to_name = {code: name for name, code in self.indicators.items()}
+                indicator_names = [code_to_name.get(code, code) for code in indicator_codes]
             
             # Обмежуємо кількість країн та показників для стабільності API
             country_codes = country_codes[:8]  # Максимум 8 країн
-            indicators = indicators[:4]  # Максимум 4 показники
+            indicator_codes = indicator_codes[:4]  # Максимум 4 показники
+            indicator_names = indicator_names[:4]
             
             # Отримуємо дані зі Світового банку з обробкою помилок
             try:
                 data = wb.data.DataFrame(
-                    indicators,
+                    indicator_codes,
                     country_codes,
                     time=range(start_year, end_year + 1),
                     labels=True,
@@ -104,15 +113,24 @@ class WorldBankDataProvider:
             # Перетворюємо дані в зручний формат
             df = data.reset_index()
             
-            # Перейменовуємо колонки
-            df.columns = ['Country', 'Year'] + list(self.indicators.keys())
+            # Перейменовуємо колонки за вибраними індикаторами
+            # Після reset_index перші дві колонки це 'economy'/'Country' і 'time'/'Year' (з labels=True)
+            # Інші — це коди індикаторів -> перейменовуємо у дружні імена
+            code_to_name = {code: name for name, code in self.indicators.items()}
+            rename_map = {code: code_to_name.get(code, code) for code in df.columns if code not in ['Country', 'Year', 'economy', 'time']}
+            df.rename(columns=rename_map, inplace=True)
+            # Узгоджуємо назви перших двох колонок
+            if 'economy' in df.columns:
+                df.rename(columns={'economy': 'Country'}, inplace=True)
+            if 'time' in df.columns:
+                df.rename(columns={'time': 'Year'}, inplace=True)
             
             # Додаємо назви країн
             df['Country_Name'] = df['Country'].map(self.countries)
             df['Country_Name'] = df['Country_Name'].fillna(df['Country'])
             
             # Переміщуємо колонки
-            cols = ['Country', 'Country_Name', 'Year'] + list(self.indicators.keys())
+            cols = ['Country', 'Country_Name', 'Year'] + indicator_names
             df = df[cols]
             
             return df
@@ -140,8 +158,10 @@ class WorldBankDataProvider:
             current_year = datetime.now().year
             start_year = current_year - years
             
+            # Дозволяємо як дружню назву, так і вже код
+            indicator_code = self.indicators.get(indicator, indicator)
             data = wb.data.DataFrame(
-                [self.indicators[indicator]],
+                [indicator_code],
                 countries,
                 time=range(start_year, current_year + 1),
                 labels=True,
@@ -183,7 +203,7 @@ class WorldBankDataProvider:
             indicator_codes = [self.indicators[ind] for ind in indicators]
             
             data = wb.data.DataFrame(
-                indicator_codes,
+                [self.indicators.get(code, code) for code in indicator_codes],
                 [country],
                 time=range(start_year, current_year + 1),
                 labels=True,
