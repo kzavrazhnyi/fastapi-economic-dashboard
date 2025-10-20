@@ -139,6 +139,17 @@
         </div>
     </nav>
 
+    <!-- Індикатор статусу даних -->
+    <div class="container mt-3">
+        <div class="alert alert-info d-flex align-items-center" id="data-status-alert" style="display: none !important;">
+            <i class="fas fa-info-circle me-2"></i>
+            <div>
+                <strong>Статус даних:</strong> <span id="data-status-text">Завантаження...</span>
+                <small class="d-block text-muted" id="data-status-details"></small>
+            </div>
+        </div>
+    </div>
+
     <div class="container mt-4">
         <!-- KPI Панель -->
         <div class="row" id="kpi-panel">
@@ -700,6 +711,9 @@
                 // Оновлюємо інтерфейс
                 updateKPIPanel();
                 updateCharts();
+                
+                // Перевіряємо статус даних Світового банку
+                checkWorldBankDataStatus();
                 
                 hideLoading();
             } catch (error) {
@@ -1345,6 +1359,20 @@
                 worldBankData = result;
                 updateWorldBankIndicatorsChart(result);
                 updateWorldBankIndicatorsTable(result);
+                
+                // Перевіряємо статус даних
+                if (result && result.length > 0) {
+                    const firstItem = result[0];
+                    if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
+                        showDataStatus('warning', 
+                            'Використовуються зразкові дані', 
+                            'API Світового банку недоступний. Відображаються демонстраційні дані.');
+                    } else {
+                        showDataStatus('success', 
+                            'Дані з API Світового банку', 
+                            'Отримано реальні економічні дані.');
+                    }
+                }
 
             } catch (error) {
                 console.error('Помилка завантаження даних Світового банку:', error);
@@ -1643,6 +1671,20 @@
                     console.log('Отримані дані:', result);
                     updateNormalizedChart(result.data, result.normalization_info, currency);
                     updateNormalizedTable(result.data, result.normalization_info);
+                    
+                    // Перевіряємо статус даних
+                    if (result.data && result.data.length > 0) {
+                        const firstItem = result.data[0];
+                        if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
+                            showDataStatus('warning', 
+                                'Використовуються зразкові дані', 
+                                'API Світового банку недоступний. Відображаються демонстраційні дані.');
+                        } else {
+                            showDataStatus('success', 
+                                'Дані з API Світового банку', 
+                                'Отримано реальні економічні дані.');
+                        }
+                    }
                 } else {
                     console.error('Помилка відповіді:', result);
                     showError(result.detail || 'Помилка завантаження нормалізованих даних');
@@ -1763,6 +1805,20 @@
                 if (response.ok) {
                     updateHealthChart(result.analysis);
                     updateHealthAnalysis(result.analysis, result.methodology);
+                    
+                    // Перевіряємо статус даних
+                    if (result.analysis && Object.keys(result.analysis).length > 0) {
+                        const firstCountry = Object.values(result.analysis)[0];
+                        if (firstCountry.country_name === 'Ukraine' || firstCountry.country_name === 'USA') {
+                            showDataStatus('warning', 
+                                'Використовуються зразкові дані', 
+                                'API Світового банку недоступний. Відображаються демонстраційні дані.');
+                        } else {
+                            showDataStatus('success', 
+                                'Дані з API Світового банку', 
+                                'Отримано реальні економічні дані.');
+                        }
+                    }
                 } else {
                     showError(result.detail || "Помилка аналізу економічного здоров'я");
                 }
@@ -1906,6 +1962,83 @@
                 case 'Critical': return 'bg-dark';
                 case 'No Data': return 'bg-secondary';
                 default: return 'bg-secondary';
+            }
+        }
+        
+        // Функції для відображення статусу даних
+        function showDataStatus(type, status, details = '') {
+            const alert = document.getElementById('data-status-alert');
+            const statusText = document.getElementById('data-status-text');
+            const statusDetails = document.getElementById('data-status-details');
+            
+            // Видаляємо попередні класи
+            alert.className = 'alert d-flex align-items-center';
+            
+            // Додаємо відповідний клас та іконку
+            switch(type) {
+                case 'success':
+                    alert.classList.add('alert-success');
+                    alert.querySelector('i').className = 'fas fa-check-circle me-2';
+                    break;
+                case 'warning':
+                    alert.classList.add('alert-warning');
+                    alert.querySelector('i').className = 'fas fa-exclamation-triangle me-2';
+                    break;
+                case 'error':
+                    alert.classList.add('alert-danger');
+                    alert.querySelector('i').className = 'fas fa-exclamation-circle me-2';
+                    break;
+                case 'info':
+                default:
+                    alert.classList.add('alert-info');
+                    alert.querySelector('i').className = 'fas fa-info-circle me-2';
+                    break;
+            }
+            
+            statusText.textContent = status;
+            statusDetails.textContent = details;
+            alert.style.display = 'flex';
+            
+            // Автоматично приховуємо через 5 секунд для успішних статусів
+            if (type === 'success') {
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        function hideDataStatus() {
+            document.getElementById('data-status-alert').style.display = 'none';
+        }
+        
+        // Перевірка статусу даних Світового банку
+        async function checkWorldBankDataStatus() {
+            try {
+                const response = await fetch('/api/worldbank/indicators?start_year=2020&end_year=2023');
+                const data = await response.json();
+                
+                // Перевіряємо чи дані виглядають як зразкові
+                if (data && data.length > 0) {
+                    const firstItem = data[0];
+                    // Зразкові дані мають певні характеристики
+                    if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
+                        showDataStatus('warning', 
+                            'Використовуються зразкові дані', 
+                            'API Світового банку недоступний. Відображаються демонстраційні дані для тестування функціональності.');
+                    } else {
+                        showDataStatus('success', 
+                            'Дані з API Світового банку', 
+                            'Отримано реальні економічні дані з офіційного джерела.');
+                    }
+                } else {
+                    showDataStatus('error', 
+                        'Дані недоступні', 
+                        'Не вдалося завантажити дані з API Світового банку.');
+                }
+            } catch (error) {
+                showDataStatus('error', 
+                    'Помилка завантаження', 
+                    'Не вдалося перевірити статус даних: ' + error.message);
             }
         }
     </script>
