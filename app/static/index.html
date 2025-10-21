@@ -849,13 +849,12 @@
             }
         }
 
-        function saveCryptoDataToStorage(data, globalData) {
+        function saveCryptoDataToStorage(data, globalData, lastUpdate = null) {
             try {
                 const cryptoData = {
                     marketData: data,
                     globalData: globalData,
-                    timestamp: new Date().toISOString(),
-                    savedAt: new Date().toLocaleString('uk-UA')
+                    lastUpdate: lastUpdate
                 };
                 localStorage.setItem('cryptoData', JSON.stringify(cryptoData));
                 console.log('💾 Крипто дані збережено локально');
@@ -879,7 +878,7 @@
         }
 
         function displaySavedCryptoData(cryptoData) {
-            const { marketData, globalData, savedAt } = cryptoData;
+            const { marketData, globalData, lastUpdate } = cryptoData;
             
             // Показати збережені дані ринку
             const tableBody = document.getElementById('crypto-market-table');
@@ -919,12 +918,18 @@
                 }
             }
 
-            // Показати статус збережених даних
-            updateCryptoStatus(`Показано збережені дані від ${savedAt}`, 'info');
+            // Показати статус збережених даних з часом отримання
+            const statusMessage = lastUpdate ? 
+                `Показано збережені дані (отримано: ${lastUpdate})` : 
+                `Показано збережені дані`;
+            updateCryptoStatus(statusMessage, 'info');
             
             const globalStatusEl = document.getElementById('crypto-global-status');
             if (globalStatusEl) {
-                globalStatusEl.innerHTML = `<i class="fas fa-save text-info"></i> Збережено від ${savedAt}`;
+                const globalStatusMessage = lastUpdate ? 
+                    `<i class="fas fa-save text-info"></i> Дані отримано: ${lastUpdate}` : 
+                    `<i class="fas fa-save text-info"></i> Збережені дані`;
+                globalStatusEl.innerHTML = globalStatusMessage;
             }
         }
 
@@ -1080,22 +1085,38 @@
                     throw new Error(`HTTP error! status: ${resp.status}`);
                 }
                 
-                const data = await resp.json();
+                const response = await resp.json();
                 
-                console.log('📈 Отримано даних:', Array.isArray(data) ? data.length : 'не масив');
-                console.log('📋 Тип даних:', typeof data);
-                if (Array.isArray(data) && data.length > 0) {
+                // Handle new response format with metadata / Обробка нового формату відповіді з метаданими
+                let data, lastUpdate, currency, totalCoins;
+                if (response.data && Array.isArray(response.data)) {
+                    // New format with metadata / Новий формат з метаданими
+                    data = response.data;
+                    lastUpdate = response.last_update;
+                    currency = response.currency;
+                    totalCoins = response.total_coins;
+                } else if (Array.isArray(response)) {
+                    // Old format (backward compatibility) / Старий формат (зворотна сумісність)
+                    data = response;
+                    lastUpdate = null;
+                    currency = cur;
+                    totalCoins = data.length;
+                } else {
+                    throw new Error('Invalid response format');
+                }
+                
+                console.log('📈 Отримано даних:', totalCoins, 'монет');
+                console.log('📋 Валюта:', currency);
+                console.log('🕒 Останнє оновлення:', lastUpdate || 'не відомо');
+                if (data.length > 0) {
                     console.log('🪙 Перша монета:', data[0].name, '(' + data[0].symbol + ')');
                 }
                 
-                // Validate that data is an array
-                if (!Array.isArray(data)) {
-                    console.error('Expected array but got:', typeof data, data);
-                    throw new Error('API returned invalid data format');
-                }
-                
-                // Оновити статус успіху
-                updateCryptoStatus(`Завантажено ${data.length} монет`, 'success');
+                // Оновити статус успіху з часом отримання
+                const statusMessage = lastUpdate ? 
+                    `Завантажено ${data.length} монет (отримано: ${lastUpdate})` : 
+                    `Завантажено ${data.length} монет`;
+                updateCryptoStatus(statusMessage, 'success');
                 
                 // Очистити статус через 3 секунди
                 setTimeout(() => {
@@ -1129,8 +1150,8 @@
                 // Оновити глобальні метрики (в USD)
                 const globalData = await loadCryptoGlobal();
                 
-                // Зберегти дані локально
-                saveCryptoDataToStorage(data, globalData);
+                // Зберегти дані локально з часом оновлення
+                saveCryptoDataToStorage(data, globalData, lastUpdate);
             } catch (error) {
                 console.error('Помилка завантаження крипто-даних:', error);
                 
@@ -1181,11 +1202,23 @@
                 const resp = await fetch(apiUrl);
                 console.log('📊 Статус відповіді (глобальні):', resp.status, resp.statusText);
                 
-                const payload = await resp.json();
-                console.log('📋 Тип глобальних даних:', typeof payload);
+                const response = await resp.json();
+                console.log('📋 Тип глобальних даних:', typeof response);
                 
-                const data = payload && payload.data ? payload.data : payload;
+                // Handle new response format with metadata / Обробка нового формату відповіді з метаданими
+                let data, lastUpdate;
+                if (response.data) {
+                    // New format with metadata / Новий формат з метаданими
+                    data = response.data;
+                    lastUpdate = response.last_update;
+                } else {
+                    // Old format (backward compatibility) / Старий формат (зворотна сумісність)
+                    data = response;
+                    lastUpdate = null;
+                }
+                
                 console.log('📈 Глобальні дані отримано:', data ? 'так' : 'ні');
+                console.log('🕒 Останнє оновлення глобальних даних:', lastUpdate || 'не відомо');
                 
                 const mcapUsd = data.total_market_cap && data.total_market_cap.usd ? data.total_market_cap.usd : null;
                 const btcDom = data.market_cap_percentage && data.market_cap_percentage.btc ? data.market_cap_percentage.btc : null;
@@ -1199,9 +1232,12 @@
                     document.getElementById('crypto-global-btc').textContent = btcDom.toFixed(2) + '%';
                 }
                 
-                // Оновити статус успіху
+                // Оновити статус успіху з часом отримання
                 if (globalStatusEl) {
-                    globalStatusEl.innerHTML = '<i class="fas fa-check-circle text-success"></i> Метрики оновлено';
+                    const statusMessage = lastUpdate ? 
+                        `<i class="fas fa-check-circle text-success"></i> Метрики отримано: ${lastUpdate}` : 
+                        '<i class="fas fa-check-circle text-success"></i> Метрики оновлено';
+                    globalStatusEl.innerHTML = statusMessage;
                     
                     // Очистити статус через 3 секунди
                     setTimeout(() => {

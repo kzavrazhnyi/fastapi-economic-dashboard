@@ -59,6 +59,14 @@ class CryptoDataProvider:
         
         self._last_request_time = time.time()
 
+    def get_last_update_time(self, endpoint: str, params: Dict[str, Any]) -> str:
+        """Get last update time for cached data / Отримує час останнього оновлення кешованих даних"""
+        cache_key = self._get_cache_key(endpoint, params)
+        if cache_key in self._cache:
+            cached_time, _ = self._cache[cache_key]
+            return cached_time.strftime("%d.%m.%Y, %H:%M:%S")
+        return None
+
     def get_market_data(self, currency: str = "usd", per_page: int = 100) -> List[Dict[str, Any]]:
         """Fetch market data for top cryptocurrencies ordered by market cap.
         Returns a JSON list of objects as provided by CoinGecko.

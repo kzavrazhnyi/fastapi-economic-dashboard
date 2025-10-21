@@ -686,7 +686,24 @@ async def get_crypto_markets(currency: str = 'usd', per_page: int = 100):
     try:
         provider = CryptoDataProvider()
         data = await run_in_threadpool(provider.get_market_data, currency=currency, per_page=per_page)
-        return data
+        
+        # Отримуємо час останнього оновлення / Get last update time
+        params = {
+            "vs_currency": currency,
+            "order": "market_cap_desc",
+            "per_page": min(per_page, 100),
+            "page": 1,
+            "sparkline": "false",
+            "price_change_percentage": "24h",
+        }
+        last_update = provider.get_last_update_time("coins/markets", params)
+        
+        return {
+            "data": data,
+            "last_update": last_update,
+            "currency": currency,
+            "total_coins": len(data)
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -707,7 +724,15 @@ async def get_crypto_global():
     try:
         provider = CryptoDataProvider()
         data = await run_in_threadpool(provider.get_global)
-        return data
+        
+        # Отримуємо час останнього оновлення / Get last update time
+        params = {}
+        last_update = provider.get_last_update_time("global", params)
+        
+        return {
+            "data": data,
+            "last_update": last_update
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
