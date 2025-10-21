@@ -383,6 +383,13 @@
                     <div class="chart-title">
                         <i class="fas fa-globe me-2"></i>
                         Економетричні дані Світового банку
+                        <button class="btn btn-sm btn-outline-success ms-2" onclick="loadWorldBankData()" title="Оновити дані" id="worldbank-refresh-btn">
+                            <i class="fas fa-sync-alt"></i> Оновити
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning ms-2" onclick="clearAllWorldBankData()" title="Очистити всі збережені дані" id="worldbank-clear-btn">
+                            <i class="fas fa-trash-alt"></i> Очистити
+                        </button>
+                        <span id="worldbank-status" class="ms-3 text-muted small"></span>
                     </div>
                     <div id="worldbank-panel">
                         <!-- Загальний статус API Світового банку -->
@@ -814,6 +821,15 @@
                 loadCryptoMarketData();
             }
 
+            // Спробувати завантажити збережені World Bank дані при завантаженні сторінки
+            const worldBankKeys = Object.keys(localStorage).filter(key => key.startsWith('worldBank_'));
+            if (worldBankKeys.length > 0) {
+                console.log(`📂 Знайдено ${worldBankKeys.length} збережених World Bank даних`);
+                updateWorldBankStatus(`Знайдено ${worldBankKeys.length} збережених даних`, 'info');
+            } else {
+                console.log('🔄 Збережених World Bank даних немає');
+            }
+
             // Авто-перезавантаження ринку при зміні валюти
             const cryptoCur = document.getElementById('crypto-currency');
             if (cryptoCur) {
@@ -952,6 +968,95 @@
             } catch (error) {
                 console.error('❌ Помилка очищення даних:', error);
                 updateCryptoStatus('Помилка очищення даних', 'error');
+            }
+        }
+
+        // World Bank data caching functions
+        function saveWorldBankDataToStorage(dataType, data) {
+            try {
+                const worldBankData = {
+                    [dataType]: data,
+                    timestamp: new Date().toISOString(),
+                    savedAt: new Date().toLocaleString('uk-UA')
+                };
+                localStorage.setItem(`worldBank_${dataType}`, JSON.stringify(worldBankData));
+                console.log(`💾 World Bank ${dataType} дані збережено локально`);
+            } catch (error) {
+                console.error('❌ Помилка збереження World Bank даних:', error);
+            }
+        }
+
+        function loadWorldBankDataFromStorage(dataType) {
+            try {
+                const savedData = localStorage.getItem(`worldBank_${dataType}`);
+                if (savedData) {
+                    const worldBankData = JSON.parse(savedData);
+                    console.log(`📂 Завантажено збережені World Bank ${dataType} дані від:`, worldBankData.savedAt);
+                    return worldBankData;
+                }
+            } catch (error) {
+                console.error('❌ Помилка завантаження збережених World Bank даних:', error);
+            }
+            return null;
+        }
+
+        function clearSavedWorldBankData(dataType) {
+            try {
+                localStorage.removeItem(`worldBank_${dataType}`);
+                console.log(`🗑️ Збережені World Bank ${dataType} дані очищено`);
+            } catch (error) {
+                console.error('❌ Помилка очищення World Bank даних:', error);
+            }
+        }
+
+        function updateWorldBankStatus(message, type = 'info', elementId = 'worldbank-status') {
+            const statusEl = document.getElementById(elementId);
+            if (statusEl) {
+                const icon = type === 'loading' ? 'fas fa-spinner fa-spin' : 
+                           type === 'success' ? 'fas fa-check-circle text-success' :
+                           type === 'error' ? 'fas fa-exclamation-triangle text-danger' :
+                           'fas fa-info-circle text-info';
+                statusEl.innerHTML = `<i class="${icon}"></i> ${message}`;
+            }
+        }
+
+        function clearAllWorldBankData() {
+            try {
+                // Очистити всі збережені World Bank дані
+                const keys = Object.keys(localStorage);
+                let clearedCount = 0;
+                
+                keys.forEach(key => {
+                    if (key.startsWith('worldBank_')) {
+                        localStorage.removeItem(key);
+                        clearedCount++;
+                    }
+                });
+                
+                console.log(`🗑️ Очищено ${clearedCount} збережених World Bank даних`);
+                
+                // Очистити відображення
+                const chartContainer = document.getElementById('worldbank-indicators-chart');
+                if (chartContainer) {
+                    chartContainer.innerHTML = '<p class="text-muted">Дані очищено. Натисніть "Оновити" для завантаження нових даних.</p>';
+                }
+                
+                const tableContainer = document.getElementById('worldbank-indicators-table');
+                if (tableContainer) {
+                    tableContainer.innerHTML = '<p class="text-muted">Дані очищено. Натисніть "Оновити" для завантаження нових даних.</p>';
+                }
+                
+                // Оновити статус
+                updateWorldBankStatus(`Очищено ${clearedCount} збережених даних`, 'info');
+                
+                // Очистити статус через 3 секунди
+                setTimeout(() => {
+                    updateWorldBankStatus('', 'info');
+                }, 3000);
+                
+            } catch (error) {
+                console.error('❌ Помилка очищення World Bank даних:', error);
+                updateWorldBankStatus('Помилка очищення даних', 'error');
             }
         }
 
@@ -1891,11 +1996,20 @@
                 params.append('end_year', endYear);
 
                 const response = await fetch(`/api/worldbank/indicators?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const result = await response.json();
 
                 worldBankData = result;
                 updateWorldBankIndicatorsChart(result);
                 updateWorldBankIndicatorsTable(result);
+                
+                // Створюємо ключ для кешування та зберігаємо дані
+                const cacheKey = `indicators_${countries.join('_')}_${indicators.join('_')}_${startYear}_${endYear}`;
+                saveWorldBankDataToStorage(cacheKey, result);
                 
                 // Перевіряємо статус даних (індикатор у панелі Світового банку)
                 const rows = (result && result.data) ? result.data : result;
@@ -1921,9 +2035,38 @@
 
             } catch (error) {
                 console.error('Помилка завантаження даних Світового банку:', error);
-                showError('Помилка завантаження даних Світового банку: ' + error.message);
-                showWorldBankStatus('error', 'Помилка API', 'Не вдалося отримати дані з Світового банку');
-                showTabStatus('indicators', 'error', 'Помилка завантаження', 'Не вдалося завантажити дані показників');
+                
+                // Спробувати завантажити збережені дані
+                const countries = Array.from(document.getElementById('worldbank-countries').selectedOptions)
+                    .map(option => option.value);
+                const indicators = Array.from(document.getElementById('worldbank-indicators').selectedOptions)
+                    .map(option => option.value);
+                const startYear = document.getElementById('worldbank-start-year').value;
+                const endYear = document.getElementById('worldbank-end-year').value;
+                
+                const cacheKey = `indicators_${countries.join('_')}_${indicators.join('_')}_${startYear}_${endYear}`;
+                const savedData = loadWorldBankDataFromStorage(cacheKey);
+                
+                if (savedData && savedData[cacheKey]) {
+                    console.log('📂 Використовуємо збережені дані World Bank');
+                    worldBankData = savedData[cacheKey];
+                    updateWorldBankIndicatorsChart(savedData[cacheKey]);
+                    updateWorldBankIndicatorsTable(savedData[cacheKey]);
+                    
+                    const rows = (savedData[cacheKey] && savedData[cacheKey].data) ? savedData[cacheKey].data : savedData[cacheKey];
+                    const count = rows && rows.length ? rows.length : 0;
+                    
+                    showWorldBankStatus('warning', 
+                        'API недоступний', 
+                        `Показано збережені дані від ${savedData.savedAt}`);
+                    showTabStatus('indicators', 'success', 
+                        'Збережені дані', 
+                        `Завантажено ${count} записів (збережено ${savedData.savedAt})`);
+                } else {
+                    showError('Помилка завантаження даних Світового банку: ' + error.message);
+                    showWorldBankStatus('error', 'Помилка API', 'Не вдалося отримати дані з Світового банку');
+                    showTabStatus('indicators', 'error', 'Помилка завантаження', 'Не вдалося завантажити дані показників');
+                }
             }
         }
 
