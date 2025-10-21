@@ -328,6 +328,9 @@
                         <button class="btn btn-sm btn-outline-success ms-2" onclick="loadCryptoMarketData()" title="Оновити дані" id="crypto-refresh-btn">
                             <i class="fas fa-sync-alt"></i> Оновити
                         </button>
+                        <button class="btn btn-sm btn-outline-warning ms-2" onclick="clearSavedCryptoData()" title="Очистити збережені дані" id="crypto-clear-btn">
+                            <i class="fas fa-trash-alt"></i> Очистити
+                        </button>
                         <span id="crypto-status" class="ms-3 text-muted small"></span>
                         <div class="ms-3 d-inline-block">
                             <select id="crypto-currency" class="form-select form-select-sm" style="width: auto; display: inline-block;">
@@ -801,6 +804,16 @@
 
             loadFilesList();
 
+            // Спробувати завантажити збережені крипто дані при завантаженні сторінки
+            const savedCryptoData = loadCryptoDataFromStorage();
+            if (savedCryptoData) {
+                console.log('📂 Показано збережені крипто дані');
+                displaySavedCryptoData(savedCryptoData);
+            } else {
+                console.log('🔄 Збережених даних немає, завантажуємо нові');
+                loadCryptoMarketData();
+            }
+
             // Авто-перезавантаження ринку при зміні валюти
             const cryptoCur = document.getElementById('crypto-currency');
             if (cryptoCur) {
@@ -817,6 +830,128 @@
                            type === 'error' ? 'fas fa-exclamation-triangle text-danger' :
                            'fas fa-info-circle text-info';
                 statusEl.innerHTML = `<i class="${icon}"></i> ${message}`;
+            }
+        }
+
+        function saveCryptoDataToStorage(data, globalData) {
+            try {
+                const cryptoData = {
+                    marketData: data,
+                    globalData: globalData,
+                    timestamp: new Date().toISOString(),
+                    savedAt: new Date().toLocaleString('uk-UA')
+                };
+                localStorage.setItem('cryptoData', JSON.stringify(cryptoData));
+                console.log('💾 Крипто дані збережено локально');
+            } catch (error) {
+                console.error('❌ Помилка збереження даних:', error);
+            }
+        }
+
+        function loadCryptoDataFromStorage() {
+            try {
+                const savedData = localStorage.getItem('cryptoData');
+                if (savedData) {
+                    const cryptoData = JSON.parse(savedData);
+                    console.log('📂 Завантажено збережені крипто дані від:', cryptoData.savedAt);
+                    return cryptoData;
+                }
+            } catch (error) {
+                console.error('❌ Помилка завантаження збережених даних:', error);
+            }
+            return null;
+        }
+
+        function displaySavedCryptoData(cryptoData) {
+            const { marketData, globalData, savedAt } = cryptoData;
+            
+            // Показати збережені дані ринку
+            const tableBody = document.getElementById('crypto-market-table');
+            tableBody.innerHTML = '';
+            marketData.forEach(coin => {
+                const change24h = coin.price_change_percentage_24h;
+                const colorClass = (typeof change24h === 'number' && !isNaN(change24h) && change24h >= 0) ? 'text-success' : 'text-danger';
+                const symbol = (coin.symbol || '').toUpperCase();
+                const currencyCode = 'USD'; // Збережені дані завжди в USD
+                const row = `
+                    <tr style="cursor:pointer" onclick="openCryptoCoin('${coin.id}', '${coin.name}', '${symbol}', 'usd')">
+                        <td>${coin.market_cap_rank ?? ''}</td>
+                        <td>
+                            <img src="${coin.image}" width="20" height="20" class="me-2">
+                            <strong>${coin.name}</strong>
+                            <span class="text-muted">${symbol}</span>
+                        </td>
+                        <td>${formatCurrencyByCode(coin.current_price, currencyCode)}</td>
+                        <td class="${colorClass}">${(typeof change24h === 'number' && !isNaN(change24h)) ? change24h.toFixed(2) + '%' : 'N/A'}</td>
+                        <td>${formatCurrencyByCode(coin.market_cap || 0, currencyCode)}</td>
+                        <td>${formatCurrencyByCode(coin.total_volume || 0, currencyCode)}</td>
+                    </tr>
+                `;
+                tableBody.insertAdjacentHTML('beforeend', row);
+            });
+
+            // Показати збережені глобальні метрики
+            if (globalData && globalData.data) {
+                const mcapUsd = globalData.data.total_market_cap && globalData.data.total_market_cap.usd ? globalData.data.total_market_cap.usd : null;
+                const btcDom = globalData.data.market_cap_percentage && globalData.data.market_cap_percentage.btc ? globalData.data.market_cap_percentage.btc : null;
+                
+                if (mcapUsd != null) {
+                    document.getElementById('crypto-global-mcap').textContent = formatCurrencyByCode(mcapUsd, 'USD');
+                }
+                if (btcDom != null) {
+                    document.getElementById('crypto-global-btc').textContent = btcDom.toFixed(2) + '%';
+                }
+            }
+
+            // Показати статус збережених даних
+            updateCryptoStatus(`Показано збережені дані від ${savedAt}`, 'info');
+            
+            const globalStatusEl = document.getElementById('crypto-global-status');
+            if (globalStatusEl) {
+                globalStatusEl.innerHTML = `<i class="fas fa-save text-info"></i> Збережено від ${savedAt}`;
+            }
+        }
+
+        function clearSavedCryptoData() {
+            try {
+                localStorage.removeItem('cryptoData');
+                console.log('🗑️ Збережені крипто дані очищено');
+                
+                // Очистити таблицю та метрики
+                const tableBody = document.getElementById('crypto-market-table');
+                if (tableBody) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Дані очищено. Натисніть "Оновити" для завантаження нових даних.
+                            </td>
+                        </tr>
+                    `;
+                }
+                
+                // Очистити глобальні метрики
+                document.getElementById('crypto-global-mcap').textContent = '—';
+                document.getElementById('crypto-global-btc').textContent = '—';
+                
+                // Оновити статуси
+                updateCryptoStatus('Збережені дані очищено', 'info');
+                const globalStatusEl = document.getElementById('crypto-global-status');
+                if (globalStatusEl) {
+                    globalStatusEl.innerHTML = '<i class="fas fa-trash text-warning"></i> Дані очищено';
+                }
+                
+                // Очистити статуси через 3 секунди
+                setTimeout(() => {
+                    updateCryptoStatus('', 'info');
+                    if (globalStatusEl) {
+                        globalStatusEl.innerHTML = '';
+                    }
+                }, 3000);
+                
+            } catch (error) {
+                console.error('❌ Помилка очищення даних:', error);
+                updateCryptoStatus('Помилка очищення даних', 'error');
             }
         }
 
@@ -885,13 +1020,29 @@
                     `;
                     tableBody.insertAdjacentHTML('beforeend', row);
                 });
+                
                 // Оновити глобальні метрики (в USD)
-                await loadCryptoGlobal();
+                const globalData = await loadCryptoGlobal();
+                
+                // Зберегти дані локально
+                saveCryptoDataToStorage(data, globalData);
             } catch (error) {
                 console.error('Помилка завантаження крипто-даних:', error);
                 
+                // Визначити тип помилки та показати відповідне повідомлення
+                let errorMessage = error.message;
+                let userMessage = 'Не вдалося завантажити дані ринку криптовалют';
+                
+                if (error.message.includes('Rate limit exceeded')) {
+                    userMessage = 'Перевищено ліміт запитів до CoinGecko API. Спробуйте пізніше.';
+                } else if (error.message.includes('timeout') || error.message.includes('not responding')) {
+                    userMessage = 'CoinGecko API не відповідає. Перевірте підключення до інтернету.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    userMessage = 'Помилка мережі. Перевірте підключення до інтернету.';
+                }
+                
                 // Оновити статус помилки на панелі
-                updateCryptoStatus(`Помилка: ${error.message}`, 'error');
+                updateCryptoStatus(`Помилка: ${userMessage}`, 'error');
                 
                 const tableBody = document.getElementById('crypto-market-table');
                 if (tableBody) {
@@ -899,12 +1050,13 @@
                         <tr>
                             <td colspan="6" class="text-center text-danger">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
-                                Помилка завантаження даних: ${error.message}
+                                ${userMessage}
+                                <br><small class="text-muted">Спробуйте оновити сторінку або поверніться пізніше</small>
                             </td>
                         </tr>
                     `;
                 }
-                showError(`Не вдалося завантажити дані ринку криптовалют: ${error.message}`);
+                showError(userMessage);
             }
         }
 
@@ -951,15 +1103,28 @@
                         globalStatusEl.innerHTML = '';
                     }, 3000);
                 }
+                
+                return payload; // Повернути дані для збереження
             } catch (e) {
                 console.error('❌ Помилка завантаження глобальних метрик:', e);
+                
+                // Визначити тип помилки
+                let userMessage = 'Помилка завантаження метрик';
+                if (e.message.includes('Rate limit exceeded')) {
+                    userMessage = 'Ліміт запитів перевищено';
+                } else if (e.message.includes('timeout') || e.message.includes('not responding')) {
+                    userMessage = 'API не відповідає';
+                } else if (e.message.includes('Failed to fetch')) {
+                    userMessage = 'Помилка мережі';
+                }
                 
                 // Оновити статус помилки
                 const globalStatusEl = document.getElementById('crypto-global-status');
                 if (globalStatusEl) {
-                    globalStatusEl.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i> Помилка метрик';
+                    globalStatusEl.innerHTML = `<i class="fas fa-exclamation-triangle text-danger"></i> ${userMessage}`;
                 }
-                // не критично
+                
+                return null; // Повернути null при помилці
             }
         }
 
