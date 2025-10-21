@@ -8,7 +8,7 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Plotly.js -->
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -325,9 +325,10 @@
                     <div class="chart-title">
                         <i class="fab fa-bitcoin me-2"></i>
                         Огляд ринку криптовалют
-                        <button class="btn btn-sm btn-outline-success ms-2" onclick="loadCryptoMarketData()" title="Оновити дані">
+                        <button class="btn btn-sm btn-outline-success ms-2" onclick="loadCryptoMarketData()" title="Оновити дані" id="crypto-refresh-btn">
                             <i class="fas fa-sync-alt"></i> Оновити
                         </button>
+                        <span id="crypto-status" class="ms-3 text-muted small"></span>
                         <div class="ms-3 d-inline-block">
                             <select id="crypto-currency" class="form-select form-select-sm" style="width: auto; display: inline-block;">
                                 <option value="usd" selected>USD</option>
@@ -344,6 +345,9 @@
                         <div class="small text-muted">
                             <i class="fab fa-btc me-1"></i>
                             Домінація BTC: <strong id="crypto-global-btc">—</strong>
+                        </div>
+                        <div class="small text-muted">
+                            <span id="crypto-global-status"></span>
                         </div>
                     </div>
 
@@ -805,12 +809,59 @@
                 });
             }
         });
+        function updateCryptoStatus(message, type = 'info') {
+            const statusEl = document.getElementById('crypto-status');
+            if (statusEl) {
+                const icon = type === 'loading' ? 'fas fa-spinner fa-spin' : 
+                           type === 'success' ? 'fas fa-check-circle text-success' :
+                           type === 'error' ? 'fas fa-exclamation-triangle text-danger' :
+                           'fas fa-info-circle text-info';
+                statusEl.innerHTML = `<i class="${icon}"></i> ${message}`;
+            }
+        }
+
         async function loadCryptoMarketData() {
             try {
                 const curSel = document.getElementById('crypto-currency');
                 const cur = curSel ? curSel.value : 'usd';
-                const resp = await fetch(`/api/crypto/markets?currency=${encodeURIComponent(cur)}&per_page=100`);
+                const apiUrl = `/api/crypto/markets?currency=${encodeURIComponent(cur)}&per_page=100`;
+                
+                // Оновити статус на панелі
+                updateCryptoStatus('Завантаження даних...', 'loading');
+                
+                console.log('🔄 Запит до крипто API:', apiUrl);
+                console.log('📡 Повний URL:', window.location.origin + apiUrl);
+                
+                const resp = await fetch(apiUrl);
+                
+                console.log('📊 Статус відповіді:', resp.status, resp.statusText);
+                
+                if (!resp.ok) {
+                    throw new Error(`HTTP error! status: ${resp.status}`);
+                }
+                
                 const data = await resp.json();
+                
+                console.log('📈 Отримано даних:', Array.isArray(data) ? data.length : 'не масив');
+                console.log('📋 Тип даних:', typeof data);
+                if (Array.isArray(data) && data.length > 0) {
+                    console.log('🪙 Перша монета:', data[0].name, '(' + data[0].symbol + ')');
+                }
+                
+                // Validate that data is an array
+                if (!Array.isArray(data)) {
+                    console.error('Expected array but got:', typeof data, data);
+                    throw new Error('API returned invalid data format');
+                }
+                
+                // Оновити статус успіху
+                updateCryptoStatus(`Завантажено ${data.length} монет`, 'success');
+                
+                // Очистити статус через 3 секунди
+                setTimeout(() => {
+                    updateCryptoStatus('', 'info');
+                }, 3000);
+                
                 const tableBody = document.getElementById('crypto-market-table');
                 tableBody.innerHTML = '';
                 data.forEach(coin => {
@@ -838,24 +889,76 @@
                 await loadCryptoGlobal();
             } catch (error) {
                 console.error('Помилка завантаження крипто-даних:', error);
-                showError('Не вдалося завантажити дані ринку криптовалют.');
+                
+                // Оновити статус помилки на панелі
+                updateCryptoStatus(`Помилка: ${error.message}`, 'error');
+                
+                const tableBody = document.getElementById('crypto-market-table');
+                if (tableBody) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center text-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Помилка завантаження даних: ${error.message}
+                            </td>
+                        </tr>
+                    `;
+                }
+                showError(`Не вдалося завантажити дані ринку криптовалют: ${error.message}`);
             }
         }
 
         async function loadCryptoGlobal() {
             try {
-                const resp = await fetch('/api/crypto/global');
+                const apiUrl = '/api/crypto/global';
+                
+                // Оновити статус глобальних метрик
+                const globalStatusEl = document.getElementById('crypto-global-status');
+                if (globalStatusEl) {
+                    globalStatusEl.innerHTML = '<i class="fas fa-spinner fa-spin text-info"></i> Завантаження метрик...';
+                }
+                
+                console.log('🌍 Запит до глобальних метрик:', apiUrl);
+                console.log('📡 Повний URL:', window.location.origin + apiUrl);
+                
+                const resp = await fetch(apiUrl);
+                console.log('📊 Статус відповіді (глобальні):', resp.status, resp.statusText);
+                
                 const payload = await resp.json();
+                console.log('📋 Тип глобальних даних:', typeof payload);
+                
                 const data = payload && payload.data ? payload.data : payload;
+                console.log('📈 Глобальні дані отримано:', data ? 'так' : 'ні');
+                
                 const mcapUsd = data.total_market_cap && data.total_market_cap.usd ? data.total_market_cap.usd : null;
                 const btcDom = data.market_cap_percentage && data.market_cap_percentage.btc ? data.market_cap_percentage.btc : null;
+                
                 if (mcapUsd != null) {
+                    console.log('💰 Загальна капіталізація:', formatCurrencyByCode(mcapUsd, 'USD'));
                     document.getElementById('crypto-global-mcap').textContent = formatCurrencyByCode(mcapUsd, 'USD');
                 }
                 if (btcDom != null) {
+                    console.log('₿ Домінування BTC:', btcDom.toFixed(2) + '%');
                     document.getElementById('crypto-global-btc').textContent = btcDom.toFixed(2) + '%';
                 }
+                
+                // Оновити статус успіху
+                if (globalStatusEl) {
+                    globalStatusEl.innerHTML = '<i class="fas fa-check-circle text-success"></i> Метрики оновлено';
+                    
+                    // Очистити статус через 3 секунди
+                    setTimeout(() => {
+                        globalStatusEl.innerHTML = '';
+                    }, 3000);
+                }
             } catch (e) {
+                console.error('❌ Помилка завантаження глобальних метрик:', e);
+                
+                // Оновити статус помилки
+                const globalStatusEl = document.getElementById('crypto-global-status');
+                if (globalStatusEl) {
+                    globalStatusEl.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i> Помилка метрик';
+                }
                 // не критично
             }
         }
@@ -863,8 +966,20 @@
         async function openCryptoCoin(coinId, coinName, symbol, currencyCode) {
             try {
                 const cur = (currencyCode || 'usd');
-                const resp = await fetch(`/api/crypto/coins/${coinId}/history?currency=${encodeURIComponent(cur)}&days=30`);
+                const apiUrl = `/api/crypto/coins/${coinId}/history?currency=${encodeURIComponent(cur)}&days=30`;
+                
+                console.log('🪙 Запит до історії монети:', apiUrl);
+                console.log('📡 Повний URL:', window.location.origin + apiUrl);
+                console.log('🏷️ Монета:', coinName, '(' + symbol + ')');
+                
+                const resp = await fetch(apiUrl);
+                console.log('📊 Статус відповіді (історія):', resp.status, resp.statusText);
+                
                 const data = await resp.json();
+                console.log('📋 Тип історичних даних:', typeof data);
+                if (data.prices && Array.isArray(data.prices)) {
+                    console.log('📈 Точок історії цін:', data.prices.length);
+                }
                 const prices = (data && data.prices) ? data.prices : [];
                 const x = prices.map(p => new Date(p[0]));
                 const y = prices.map(p => p[1]);
