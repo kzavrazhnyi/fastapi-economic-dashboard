@@ -23,10 +23,18 @@ from fastapi.concurrency import run_in_threadpool
 from typing import List, Optional
 from datetime import datetime, date
 import pandas as pd
-from .models import SalesData, InventoryData, ProfitData, TrendData, StatsData
-from .data_generator import DataGenerator
-from .worldbank_client import WorldBankDataProvider
-from .crypto_client import CryptoDataProvider
+try:
+    # Спробуємо відносні імпорти (коли запускається як модуль)
+    from .models import SalesData, InventoryData, ProfitData, TrendData, StatsData
+    from .data_generator import DataGenerator
+    from .worldbank_client import WorldBankDataProvider
+    from .crypto_client import CryptoDataProvider
+except ImportError:
+    # Якщо не працює, використовуємо абсолютні імпорти (коли запускається як скрипт)
+    from models import SalesData, InventoryData, ProfitData, TrendData, StatsData
+    from data_generator import DataGenerator
+    from worldbank_client import WorldBankDataProvider
+    from crypto_client import CryptoDataProvider
 
 # Ініціалізація FastAPI додатку
 app = FastAPI(
@@ -50,6 +58,47 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 # Глобальна змінна для кешування даних
 cached_data = None
 
+# Глобальний екземпляр крипто провайдера для кешування
+crypto_provider = None
+
+# Глобальний екземпляр World Bank провайдера для кешування
+worldbank_provider = None
+
+# Змінна для зберігання серверних логів
+server_logs = []
+
+
+def get_crypto_provider():
+    """Отримання глобального екземпляра крипто провайдера"""
+    global crypto_provider
+    if crypto_provider is None:
+        crypto_provider = CryptoDataProvider()
+    return crypto_provider
+
+def get_worldbank_provider():
+    """Отримання глобального екземпляра World Bank провайдера"""
+    global worldbank_provider
+    if worldbank_provider is None:
+        worldbank_provider = WorldBankDataProvider()
+    return worldbank_provider
+
+def add_server_log(log_type: str, message: str, details: dict = None):
+    """Додавання логу до серверних логів"""
+    global server_logs
+    import datetime
+    
+    log_entry = {
+        "timestamp": datetime.datetime.now().isoformat(),
+        "type": log_type,
+        "message": message,
+        "details": details or {}
+    }
+    
+    server_logs.append(log_entry)
+    
+    # Обмежуємо кількість логів до 100 записів
+    if len(server_logs) > 100:
+        server_logs = server_logs[-100:]
 
 def load_data():
     """Завантаження даних з CSV файлів або генерація нових"""
@@ -436,10 +485,18 @@ async def get_worldbank_indicators(
 ):
     """Отримання економетричних показників зі Світового банку"""
     try:
-        provider = WorldBankDataProvider()
+        provider = get_worldbank_provider()
         
         country_list = countries.split(',') if countries else None
         indicator_list = indicators.split(',') if indicators else None
+        
+        # Додаємо лог запиту
+        add_server_log("request", "World Bank API запит", {
+            "countries": country_list,
+            "indicators": indicator_list,
+            "start_year": start_year,
+            "end_year": end_year
+        })
         
         data = await run_in_threadpool(
             provider.get_economic_indicators,
@@ -449,18 +506,75 @@ async def get_worldbank_indicators(
             end_year=end_year
         )
         
+        # --- ПОЧАТОК ВИПРАВЛЕННЯ ---
+
+        # Якщо дані порожні, повертаємо порожню структуру
+        if data is None or data.empty:
+            return {
+                "data": [], "columns": [], "total_records": 0,
+                "countries": [], "years": []
+            }
+
         # Замінюємо NaN/NaT на None для коректної JSON-серіалізації
-        safe_data = data.where(pd.notnull(data), None)
+        safe_data_df = data.where(pd.notnull(data), None)
+
+        # 1. Конвертуємо основні дані (list of dicts)
+        # safe_data_df.to_dict('records') - ЗАЛИШАЄ NUMPY ТИПИ!
+        # Конвертуємо вручну:
+        data_records = []
+        for _, row in safe_data_df.iterrows():
+            record = {}
+            for col in safe_data_df.columns:
+                value = row[col]
+                # Явно конвертуємо типи NumPy в стандартні типи Python
+                if isinstance(value, (np.integer, np.int64, np.int32)):
+                    record[col] = int(value)
+                elif isinstance(value, (np.floating, np.float64, np.float32)):
+                    record[col] = float(value)
+                elif pd.isna(value) or value is None:
+                    record[col] = None
+                else:
+                    record[col] = str(value)
+            data_records.append(record)
         
-        return {
-            "data": safe_data.to_dict('records'),
-            "columns": safe_data.columns.tolist(),
-            "total_records": len(safe_data),
-            "countries": safe_data['Country_Name'].unique().tolist() if not safe_data.empty else [],
-            "years": sorted([y for y in safe_data['Year'].unique().tolist() if y is not None]) if not safe_data.empty else []
+        # 2. Конвертуємо список країн (щоб уникнути NumPy рядків)
+        countries_list = []
+        if 'Country_Name' in safe_data_df.columns:
+            countries_list = [str(c) for c in safe_data_df['Country_Name'].unique() if c is not None]
+
+        # 3. Конвертуємо список років (щоб уникнути NumPy чисел)
+        years_list = []
+        if 'Year' in safe_data_df.columns:
+            raw_years = [y for y in safe_data_df['Year'].unique() if y is not None]
+            # Конвертуємо в int, щоб правильно сортувати
+            int_years = sorted([int(y) for y in raw_years])
+            years_list = int_years # FastAPI може серіалізувати звичайний int
+
+        # Отримуємо час останнього оновлення
+        params = {
+            'country_codes': country_list,
+            'indicators': indicator_list,
+            'start_year': start_year,
+            'end_year': end_year
         }
+        last_update = provider.get_last_update_time('economic_indicators', params)
+
+        return {
+            "data": data_records,
+            "columns": safe_data_df.columns.tolist(),
+            "last_update": last_update,
+            "total_records": len(data_records),
+            "countries": countries_list,
+            "years": years_list
+        }
+        
+        # --- КІНЕЦЬ ВИПРАВЛЕННЯ ---
     
     except Exception as e:
+        # Додамо логування в консоль сервера для легшого дебагу
+        print(f"!!! КРИТИЧНА ПОМИЛКА в /api/worldbank/indicators: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Помилка отримання даних Світового банку: {str(e)}")
 
 @app.get("/api/worldbank/comparison")
@@ -528,7 +642,7 @@ async def get_country_trends(
 async def get_available_countries():
     """Отримання списку доступних країн"""
     try:
-        provider = WorldBankDataProvider()
+        provider = get_worldbank_provider()
         return {
             "countries": provider.countries,
             "total_countries": len(provider.countries)
@@ -537,11 +651,27 @@ async def get_available_countries():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Помилка отримання списку країн: {str(e)}")
 
+@app.get("/api/server-logs")
+async def get_server_logs():
+    """Отримання серверних логів"""
+    global server_logs
+    return {"logs": server_logs}
+
+@app.post("/api/clear-cache")
+async def clear_cache():
+    """Очищення кешу World Bank API"""
+    try:
+        provider = get_worldbank_provider()
+        provider.clear_cache()
+        return {"message": "Кеш очищено успішно"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Помилка очищення кешу: {str(e)}")
+
 @app.get("/api/worldbank/indicators-list")
 async def get_available_indicators():
     """Отримання списку доступних показників"""
     try:
-        provider = WorldBankDataProvider()
+        provider = get_worldbank_provider()
         return {
             "indicators": provider.indicators,
             "total_indicators": len(provider.indicators)
@@ -684,7 +814,7 @@ async def get_currency_rates():
 async def get_crypto_markets(currency: str = 'usd', per_page: int = 100):
     """Отримання ринкових даних для топ криптовалют."""
     try:
-        provider = CryptoDataProvider()
+        provider = get_crypto_provider()
         data = await run_in_threadpool(provider.get_market_data, currency=currency, per_page=per_page)
         
         # Отримуємо час останнього оновлення / Get last update time
@@ -712,7 +842,7 @@ async def get_crypto_markets(currency: str = 'usd', per_page: int = 100):
 async def get_crypto_coin_history(coin_id: str, currency: str = 'usd', days: int = 30):
     """Отримання історичних даних для графіка."""
     try:
-        provider = CryptoDataProvider()
+        provider = get_crypto_provider()
         data = await run_in_threadpool(provider.get_coin_history, coin_id=coin_id, currency=currency, days=days)
         return data
     except Exception as e:
@@ -722,7 +852,7 @@ async def get_crypto_coin_history(coin_id: str, currency: str = 'usd', days: int
 async def get_crypto_global():
     """Глобальні метрики ринку криптовалют."""
     try:
-        provider = CryptoDataProvider()
+        provider = get_crypto_provider()
         data = await run_in_threadpool(provider.get_global)
         
         # Отримуємо час останнього оновлення / Get last update time
@@ -730,7 +860,7 @@ async def get_crypto_global():
         last_update = provider.get_last_update_time("global", params)
         
         return {
-            "data": data,
+            "data": data.get('data', data),
             "last_update": last_update
         }
     except Exception as e:

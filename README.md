@@ -1,4 +1,4 @@
-# FastAPI Demo Economic Data
+# FastAPI Economic Dashboard
 
 Проєкт для генерації демо-даних з економетричної статистики для торгівельно-виробничого підприємства з інтерактивною веб-візуалізацією та інтеграцією даних Світового банку.
 
@@ -52,7 +52,7 @@ venv\Scripts\python.exe -m uvicorn app.main:app --reload
 ## Структура проєкту
 
 ```
-aicursoragent/
+fastapi-economic-dashboard/
 ├── venv/                    # Віртуальне середовище
 ├── app/
 │   ├── __init__.py         # Python пакет

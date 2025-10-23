@@ -29,14 +29,14 @@ if __name__ == "__main__":
     is_production = os.environ.get("RENDER", False)
     
     if is_production:
-        print("🚀 Запуск FastAPI сервера на Render.com...")
-        print(f"📊 Порт: {port}")
-        print("🔄 Режим: Продакшен")
+        print("Starting FastAPI server on Render.com...")
+        print(f"Port: {port}")
+        print("Mode: Production")
     else:
-        print("🚀 Запуск FastAPI сервера з економетричними даними...")
-        print(f"📊 Доступ до дашборду: http://localhost:{port}")
-        print(f"📚 API документація: http://localhost:{port}/docs")
-        print("🔄 Для зупинки сервера натисніть Ctrl+C")
+        print("Starting FastAPI server with economic data...")
+        print(f"Dashboard access: http://localhost:{port}")
+        print(f"API documentation: http://localhost:{port}/docs")
+        print("Press Ctrl+C to stop the server")
     
     print("-" * 50)
     

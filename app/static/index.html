@@ -331,6 +331,9 @@
                         <button class="btn btn-sm btn-outline-warning ms-2" onclick="clearSavedCryptoData()" title="Очистити збережені дані" id="crypto-clear-btn">
                             <i class="fas fa-trash-alt"></i> Очистити
                         </button>
+                        <button class="btn btn-sm btn-outline-danger ms-1" onclick="closeAllModals()" title="Закрити всі модальні вікна" id="crypto-close-modals-btn">
+                            <i class="fas fa-times"></i> Закрити модалі
+                        </button>
                         <span id="crypto-status" class="ms-3 text-muted small"></span>
                         <div class="ms-3 d-inline-block">
                             <select id="crypto-currency" class="form-select form-select-sm" style="width: auto; display: inline-block;">
@@ -432,6 +435,12 @@
                                 <button class="nav-link" id="trends-tab" data-bs-toggle="tab" data-bs-target="#trends-content" type="button" role="tab">
                                     <i class="fas fa-trending-up me-1"></i>
                                     Тренди
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="api-monitor-tab" data-bs-toggle="tab" data-bs-target="#api-monitor-content" type="button" role="tab">
+                                    <i class="fas fa-terminal me-1"></i>
+                                    API Моніторинг
                                 </button>
                             </li>
                         </ul>
@@ -537,7 +546,7 @@
                                                     <label class="form-label">Показник</label>
                                                     <select id="comparison-indicator" class="form-select">
                                                         <option value="GDP_PER_CAPITA">ВВП на душу населення</option>
-                                                        <option value="GDP">ВВП</option>
+                                                        <option value="GDP" selected>ВВП</option>
                                                         <option value="INFLATION">Інфляція</option>
                                                         <option value="UNEMPLOYMENT">Безробіття</option>
                                                         <option value="LIFE_EXPECTANCY">Тривалість життя</option>
@@ -582,7 +591,7 @@
                                                 <div class="mb-3">
                                                     <label class="form-label">Країна</label>
                                                     <select id="trends-country" class="form-select">
-                                                        <option value="UA">Україна</option>
+                                                        <option value="UA" selected>Україна</option>
                                                         <option value="US">США</option>
                                                         <option value="DE">Німеччина</option>
                                                         <option value="PL">Польща</option>
@@ -592,7 +601,7 @@
                                                 <div class="mb-3">
                                                     <label class="form-label">Показники</label>
                                                     <select id="trends-indicators" class="form-select" multiple>
-                                                        <option value="GDP">ВВП</option>
+                                                        <option value="GDP" selected>ВВП</option>
                                                         <option value="GDP_PER_CAPITA">ВВП на душу</option>
                                                         <option value="INFLATION">Інфляція</option>
                                                         <option value="UNEMPLOYMENT">Безробіття</option>
@@ -642,7 +651,7 @@
                                                 <div class="mb-3">
                                                     <label class="form-label">Країни</label>
                                                     <select id="normalized-countries" class="form-select" multiple>
-                                                        <option value="UA">Україна</option>
+                                                        <option value="UA" selected>Україна</option>
                                                         <option value="US">США</option>
                                                         <option value="DE">Німеччина</option>
                                                         <option value="PL">Польща</option>
@@ -654,7 +663,7 @@
                                                 <div class="mb-3">
                                                     <label class="form-label">Показники</label>
                                                     <select id="normalized-indicators" class="form-select" multiple>
-                                                        <option value="GDP">ВВП</option>
+                                                        <option value="GDP" selected>ВВП</option>
                                                         <option value="GDP_PER_CAPITA">ВВП на душу</option>
                                                         <option value="INFLATION">Інфляція</option>
                                                         <option value="UNEMPLOYMENT">Безробіття</option>
@@ -720,7 +729,7 @@
                                                 <div class="mb-3">
                                                     <label class="form-label">Країни для аналізу</label>
                                                     <select id="health-countries" class="form-select" multiple>
-                                                        <option value="UA">Україна</option>
+                                                        <option value="UA" selected>Україна</option>
                                                         <option value="US">США</option>
                                                         <option value="DE">Німеччина</option>
                                                         <option value="PL">Польща</option>
@@ -757,6 +766,85 @@
                                         <div id="health-chart" style="height: 500px;"></div>
                                         <div id="health-analysis" class="mt-3">
                                             <!-- Результати аналізу економічного здоров'я -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Вкладка API Моніторингу -->
+                            <div class="tab-pane fade" id="api-monitor-content" role="tabpanel">
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header d-flex justify-content-between align-items-center">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-terminal me-2"></i>
+                                                    Моніторинг API запитів до Світового банку
+                                                </h6>
+                                                <div>
+                                                    <button class="btn btn-sm btn-outline-secondary" onclick="clearApiLogs()">
+                                                        <i class="fas fa-trash me-1"></i>
+                                                        Очистити логи
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="toggleApiLogs()">
+                                                        <i class="fas fa-pause me-1" id="toggle-icon"></i>
+                                                        <span id="toggle-text">Пауза</span>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-info" onclick="showServerLogs()">
+                                                        <i class="fas fa-server me-1"></i>
+                                                        Серверні логи
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-warning" onclick="clearCache()">
+                                                        <i class="fas fa-trash-alt me-1"></i>
+                                                        Очистити кеш
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row mb-3">
+                                                    <div class="col-md-3">
+                                                        <div class="card bg-light">
+                                                            <div class="card-body text-center">
+                                                                <h5 class="text-primary mb-1" id="api-total-requests">0</h5>
+                                                                <small class="text-muted">Всього запитів</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="card bg-light">
+                                                            <div class="card-body text-center">
+                                                                <h5 class="text-success mb-1" id="api-success-requests">0</h5>
+                                                                <small class="text-muted">Успішних</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="card bg-light">
+                                                            <div class="card-body text-center">
+                                                                <h5 class="text-danger mb-1" id="api-error-requests">0</h5>
+                                                                <small class="text-muted">Помилок</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="card bg-light">
+                                                            <div class="card-body text-center">
+                                                                <h5 class="text-info mb-1" id="api-cached-requests">0</h5>
+                                                                <small class="text-muted">З кешу</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="api-logs-container" style="height: 500px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 1rem; background-color: #f8f9fa;">
+                                                    <div id="api-logs">
+                                                        <div class="text-muted text-center">
+                                                            <i class="fas fa-info-circle me-2"></i>
+                                                            Логи API запитів з'являться тут...
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -933,6 +1021,39 @@
             }
         }
 
+        // Обробка клавіші Escape для закриття модальних вікон
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeAllModals();
+            }
+        });
+
+        // Функція для примусового закриття всіх модальних вікон
+        function closeAllModals() {
+            try {
+                // Закриваємо всі Bootstrap модальні вікна
+                const modals = document.querySelectorAll('.modal.show');
+                modals.forEach(modal => {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) {
+                        bsModal.hide();
+                    }
+                });
+                
+                // Очищаємо всі графіки Plotly
+                const chartElements = document.querySelectorAll('[id*="chart"]');
+                chartElements.forEach(chartEl => {
+                    if (chartEl && typeof Plotly !== 'undefined') {
+                        Plotly.purge(chartEl);
+                    }
+                });
+                
+                console.log('✅ Всі модальні вікна закрито');
+            } catch (error) {
+                console.error('❌ Помилка при закритті модальних вікон:', error);
+            }
+        }
+
         function clearSavedCryptoData() {
             try {
                 localStorage.removeItem('cryptoData');
@@ -962,13 +1083,7 @@
                     globalStatusEl.innerHTML = '<i class="fas fa-trash text-warning"></i> Дані очищено';
                 }
                 
-                // Очистити статуси через 3 секунди
-                setTimeout(() => {
-                    updateCryptoStatus('', 'info');
-                    if (globalStatusEl) {
-                        globalStatusEl.innerHTML = '';
-                    }
-                }, 3000);
+                // Статуси залишаються видимими
                 
             } catch (error) {
                 console.error('❌ Помилка очищення даних:', error);
@@ -982,7 +1097,7 @@
                 const worldBankData = {
                     [dataType]: data,
                     timestamp: new Date().toISOString(),
-                    savedAt: new Date().toLocaleString('uk-UA')
+                    lastUpdate: data.last_update || null
                 };
                 localStorage.setItem(`worldBank_${dataType}`, JSON.stringify(worldBankData));
                 console.log(`💾 World Bank ${dataType} дані збережено локально`);
@@ -996,7 +1111,8 @@
                 const savedData = localStorage.getItem(`worldBank_${dataType}`);
                 if (savedData) {
                     const worldBankData = JSON.parse(savedData);
-                    console.log(`📂 Завантажено збережені World Bank ${dataType} дані від:`, worldBankData.savedAt);
+                    const lastUpdate = worldBankData.lastUpdate;
+                    console.log(`📂 Завантажено збережені World Bank ${dataType} дані`, lastUpdate ? `(отримано: ${lastUpdate})` : '');
                     return worldBankData;
                 }
             } catch (error) {
@@ -1118,11 +1234,6 @@
                     `Завантажено ${data.length} монет`;
                 updateCryptoStatus(statusMessage, 'success');
                 
-                // Очистити статус через 3 секунди
-                setTimeout(() => {
-                    updateCryptoStatus('', 'info');
-                }, 3000);
-                
                 const tableBody = document.getElementById('crypto-market-table');
                 tableBody.innerHTML = '';
                 data.forEach(coin => {
@@ -1150,8 +1261,13 @@
                 // Оновити глобальні метрики (в USD)
                 const globalData = await loadCryptoGlobal();
                 
-                // Зберегти дані локально з часом оновлення
-                saveCryptoDataToStorage(data, globalData, lastUpdate);
+                // Зберегти дані локально з часом оновлення (тільки якщо глобальні дані отримано)
+                if (globalData) {
+                    saveCryptoDataToStorage(data, globalData, lastUpdate);
+                } else {
+                    // Зберегти тільки ринкові дані якщо глобальні недоступні
+                    saveCryptoDataToStorage(data, null, lastUpdate);
+                }
             } catch (error) {
                 console.error('Помилка завантаження крипто-даних:', error);
                 
@@ -1219,6 +1335,7 @@
                 
                 console.log('📈 Глобальні дані отримано:', data ? 'так' : 'ні');
                 console.log('🕒 Останнє оновлення глобальних даних:', lastUpdate || 'не відомо');
+                console.log('📊 Структура відповіді:', Object.keys(response));
                 
                 const mcapUsd = data.total_market_cap && data.total_market_cap.usd ? data.total_market_cap.usd : null;
                 const btcDom = data.market_cap_percentage && data.market_cap_percentage.btc ? data.market_cap_percentage.btc : null;
@@ -1238,14 +1355,9 @@
                         `<i class="fas fa-check-circle text-success"></i> Метрики отримано: ${lastUpdate}` : 
                         '<i class="fas fa-check-circle text-success"></i> Метрики оновлено';
                     globalStatusEl.innerHTML = statusMessage;
-                    
-                    // Очистити статус через 3 секунди
-                    setTimeout(() => {
-                        globalStatusEl.innerHTML = '';
-                    }, 3000);
                 }
                 
-                return payload; // Повернути дані для збереження
+                return response; // Повернути дані для збереження
             } catch (e) {
                 console.error('❌ Помилка завантаження глобальних метрик:', e);
                 
@@ -1314,6 +1426,16 @@
                 document.getElementById('crypto-coin-title').textContent = `${coinName} (${symbol})`;
                 Plotly.newPlot('crypto-coin-chart', [trace], layout, { responsive: true });
                 const bsModal = new bootstrap.Modal(modalEl);
+                
+                // Додаємо обробники подій для правильного закриття
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    // Очищаємо графік при закритті модального вікна
+                    const chartEl = document.getElementById('crypto-coin-chart');
+                    if (chartEl) {
+                        Plotly.purge(chartEl);
+                    }
+                });
+                
                 bsModal.show();
             } catch (e) {
                 showError('Не вдалося завантажити історію ціни монети.');
@@ -1945,31 +2067,49 @@
         // Ініціалізація даних Світового банку
         async function initializeWorldBankData() {
             try {
+                console.log('🌍 Ініціалізація World Bank даних...');
+                
                 // Завантажуємо списки країн та показників
                 const [countriesResponse, indicatorsResponse] = await Promise.all([
                     fetch('/api/worldbank/countries'),
                     fetch('/api/worldbank/indicators-list')
                 ]);
 
+                console.log('📡 Отримано відповіді:', countriesResponse.status, indicatorsResponse.status);
+
                 const countriesData = await countriesResponse.json();
                 const indicatorsData = await indicatorsResponse.json();
+
+                console.log('📋 Дані країн:', countriesData);
+                console.log('📊 Дані показників:', indicatorsData);
 
                 availableCountries = countriesData.countries;
                 availableIndicators = indicatorsData.indicators;
 
+                console.log('✅ Змінні встановлено:', Object.keys(availableCountries).length, 'країн,', Object.keys(availableIndicators).length, 'показників');
+
                 // Заповнюємо селекти
                 populateWorldBankSelects();
+                console.log('🎯 Селекти заповнено');
 
             } catch (error) {
-                console.error('Помилка ініціалізації даних Світового банку:', error);
+                console.error('❌ Помилка ініціалізації даних Світового банку:', error);
                 showError('Помилка завантаження списків країн та показників');
             }
         }
 
         function populateWorldBankSelects() {
+            console.log('🔧 Заповнення селектів World Bank...');
+            
             // Заповнюємо селект країн
             const countriesSelect = document.getElementById('worldbank-countries');
+            if (!countriesSelect) {
+                console.error('❌ Селект країн не знайдено!');
+                return;
+            }
+            
             countriesSelect.innerHTML = '';
+            console.log('📋 Доступні країни:', availableCountries);
             
             Object.entries(availableCountries).forEach(([code, name]) => {
                 const option = document.createElement('option');
@@ -1977,10 +2117,17 @@
                 option.textContent = `${name} (${code})`;
                 countriesSelect.appendChild(option);
             });
+            console.log('✅ Додано', Object.keys(availableCountries).length, 'країн');
 
             // Заповнюємо селект показників
             const indicatorsSelect = document.getElementById('worldbank-indicators');
+            if (!indicatorsSelect) {
+                console.error('❌ Селект показників не знайдено!');
+                return;
+            }
+            
             indicatorsSelect.innerHTML = '';
+            console.log('📊 Доступні показники:', availableIndicators);
             
             Object.entries(availableIndicators).forEach(([key, code]) => {
                 const option = document.createElement('option');
@@ -1988,6 +2135,7 @@
                 option.textContent = key.replace(/_/g, ' ');
                 indicatorsSelect.appendChild(option);
             });
+            console.log('✅ Додано', Object.keys(availableIndicators).length, 'показників');
         }
 
         async function loadWorldBankData() {
@@ -2047,12 +2195,20 @@
                 const cacheKey = `indicators_${countries.join('_')}_${indicators.join('_')}_${startYear}_${endYear}`;
                 saveWorldBankDataToStorage(cacheKey, result);
                 
+                // Оновлюємо статус з часом отримання даних
+                const lastUpdate = result.last_update;
+                const statusMessage = lastUpdate ? 
+                    `Дані отримано: ${lastUpdate}` : 
+                    'Дані завантажено';
+                updateWorldBankStatus(statusMessage, 'success');
+                
                 // Перевіряємо статус даних (індикатор у панелі Світового банку)
                 const rows = (result && result.data) ? result.data : result;
                 const count = rows && rows.length ? rows.length : 0;
                 if (rows && count > 0) {
                     const firstItem = rows[0];
-                    if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
+                    // Перевіряємо чи це зразкові дані (GDP = 200 для України)
+                    if (firstItem.Country_Name === 'Ukraine' && firstItem.GDP === 200) {
                         showWorldBankStatus('warning', 
                             'API недоступний', 
                             'Використовуються зразкові дані для демонстрації');
@@ -2089,12 +2245,12 @@
                     updateWorldBankIndicatorsChart(savedData[cacheKey]);
                     updateWorldBankIndicatorsTable(savedData[cacheKey]);
                     
-                    const rows = (savedData[cacheKey] && savedData[cacheKey].data) ? savedData[cacheKey].data : savedData[cacheKey];
-                    const count = rows && rows.length ? rows.length : 0;
-                    
-                    showWorldBankStatus('warning', 
-                        'API недоступний', 
-                        `Показано збережені дані від ${savedData.savedAt}`);
+                    // Відображаємо статус з часом отримання даних
+                    const lastUpdate = savedData[cacheKey].last_update;
+                    const statusMessage = lastUpdate ? 
+                        `Збережені дані (отримано: ${lastUpdate})` : 
+                        'Збережені дані';
+                    updateWorldBankStatus(statusMessage, 'info'); 
                     showTabStatus('indicators', 'success', 
                         'Збережені дані', 
                         `Завантажено ${count} записів (збережено ${savedData.savedAt})`);
@@ -2512,7 +2668,8 @@
                     if (result.data && result.data.length > 0) {
                         const firstItem = result.data[0];
                         const count = result.total_records || result.data.length;
-                        if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
+                        // Перевіряємо чи це зразкові дані (GDP = 200 для України)
+                        if (firstItem.Country_Name === 'Ukraine' && firstItem.GDP === 200) {
                             showWorldBankStatus('warning', 
                                 'API недоступний', 
                                 'Використовуються зразкові дані для демонстрації');
@@ -3047,8 +3204,8 @@
                 // Перевіряємо чи дані виглядають як зразкові
                 if (rows && rows.length > 0) {
                     const firstItem = rows[0];
-                    // Зразкові дані мають певні характеристики
-                    if (firstItem.Country_Name === 'Ukraine' || firstItem.Country_Name === 'USA') {
+                    // Зразкові дані мають певні характеристики (GDP = 200 для України)
+                    if (firstItem.Country_Name === 'Ukraine' && firstItem.GDP === 200) {
                         showWorldBankStatus('warning', 
                             'Використовуються зразкові дані', 
                             'API Світового банку недоступний. Відображаються демонстраційні дані для тестування функціональності.');
@@ -3068,6 +3225,381 @@
                     'Не вдалося перевірити статус даних: ' + error.message);
             }
         }
+
+        // API Моніторинг функції
+        let apiLogsEnabled = true;
+        let apiStats = {
+            total: 0,
+            success: 0,
+            error: 0,
+            cached: 0
+        };
+
+        function logApiRequest(method, url, params, startTime) {
+            if (!apiLogsEnabled) return;
+            
+            apiStats.total++;
+            updateApiStats();
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'api-log-entry mb-3 p-3 border rounded';
+            logEntry.style.backgroundColor = '#ffffff';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const requestId = Math.random().toString(36).substr(2, 9);
+            
+            logEntry.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <span class="badge bg-primary me-2">${method}</span>
+                        <strong>${url}</strong>
+                        <small class="text-muted ms-2">[${requestId}]</small>
+                    </div>
+                    <small class="text-muted">${timestamp}</small>
+                </div>
+                <div class="mb-2">
+                    <strong>Параметри:</strong>
+                    <pre class="mb-1 mt-1" style="font-size: 0.8rem; background-color: #f8f9fa; padding: 0.5rem; border-radius: 0.25rem;">${JSON.stringify(params, null, 2)}</pre>
+                </div>
+                <div class="api-response-${requestId}">
+                    <div class="text-muted">
+                        <i class="fas fa-spinner fa-spin me-1"></i>
+                        Очікування відповіді...
+                    </div>
+                </div>
+            `;
+            
+            const logsContainer = document.getElementById('api-logs');
+            if (logsContainer.children.length === 1 && logsContainer.children[0].classList.contains('text-muted')) {
+                logsContainer.innerHTML = '';
+            }
+            logsContainer.appendChild(logEntry);
+            
+            // Автоскрол до останнього запису
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            
+            return requestId;
+        }
+
+        function logApiResponse(requestId, response, error = null, responseTime = null) {
+            if (!apiLogsEnabled) return;
+            
+            const responseElement = document.querySelector(`.api-response-${requestId}`);
+            if (!responseElement) return;
+            
+            if (error) {
+                apiStats.error++;
+                responseElement.innerHTML = `
+                    <div class="text-danger">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Помилка:</strong> ${error.message || error}
+                        ${responseTime ? `<small class="ms-2">(${responseTime}ms)</small>` : ''}
+                    </div>
+                `;
+            } else {
+                apiStats.success++;
+                const statusCode = response.status || 200;
+                const statusClass = statusCode >= 200 && statusCode < 300 ? 'text-success' : 'text-danger';
+                
+                responseElement.innerHTML = `
+                    <div class="${statusClass}">
+                        <i class="fas fa-check-circle me-1"></i>
+                        <strong>Відповідь:</strong> ${statusCode}
+                        ${responseTime ? `<small class="ms-2">(${responseTime}ms)</small>` : ''}
+                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="toggleResponseDetails('${requestId}')">
+                            <i class="fas fa-eye me-1"></i>
+                            Деталі
+                        </button>
+                    </div>
+                    <div class="api-response-details-${requestId}" style="display: none; margin-top: 0.5rem;">
+                        <pre style="font-size: 0.8rem; background-color: #f8f9fa; padding: 0.5rem; border-radius: 0.25rem; max-height: 200px; overflow-y: auto;">${JSON.stringify(response, null, 2)}</pre>
+                    </div>
+                `;
+            }
+            
+            updateApiStats();
+        }
+
+        function logApiCached(requestId, cacheKey) {
+            if (!apiLogsEnabled) return;
+            
+            apiStats.cached++;
+            updateApiStats();
+            
+            const responseElement = document.querySelector(`.api-response-${requestId}`);
+            if (!responseElement) return;
+            
+            responseElement.innerHTML = `
+                <div class="text-info">
+                    <i class="fas fa-database me-1"></i>
+                    <strong>З кешу:</strong> ${cacheKey}
+                    <small class="ms-2">(0ms)</small>
+                </div>
+            `;
+        }
+
+        function toggleResponseDetails(requestId) {
+            const detailsElement = document.querySelector(`.api-response-details-${requestId}`);
+            if (detailsElement) {
+                detailsElement.style.display = detailsElement.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        function updateApiStats() {
+            document.getElementById('api-total-requests').textContent = apiStats.total;
+            document.getElementById('api-success-requests').textContent = apiStats.success;
+            document.getElementById('api-error-requests').textContent = apiStats.error;
+            document.getElementById('api-cached-requests').textContent = apiStats.cached;
+        }
+
+        function clearApiLogs() {
+            document.getElementById('api-logs').innerHTML = `
+                <div class="text-muted text-center">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Логи API запитів з'являться тут...
+                </div>
+            `;
+            apiStats = { total: 0, success: 0, error: 0, cached: 0 };
+            updateApiStats();
+        }
+
+        function toggleApiLogs() {
+            apiLogsEnabled = !apiLogsEnabled;
+            const toggleIcon = document.getElementById('toggle-icon');
+            const toggleText = document.getElementById('toggle-text');
+            
+            if (apiLogsEnabled) {
+                toggleIcon.className = 'fas fa-pause me-1';
+                toggleText.textContent = 'Пауза';
+            } else {
+                toggleIcon.className = 'fas fa-play me-1';
+                toggleText.textContent = 'Продовжити';
+            }
+        }
+
+        function showServerLogs() {
+            const logsContainer = document.getElementById('api-logs');
+            
+            // Створюємо модальне вікно для серверних логів
+            const modalHtml = `
+                <div class="modal fade" id="serverLogsModal" tabindex="-1">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-server me-2"></i>
+                                    Серверні логи World Bank API
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Ці логи показують зовнішні запити до World Bank API та їх відповіді.
+                                    Переглядайте консоль сервера для повних логів.
+                                </div>
+                                <div id="server-logs-content" style="height: 500px; overflow-y: auto; background-color: #f8f9fa; padding: 1rem; border-radius: 0.375rem; font-family: monospace; font-size: 0.9rem;">
+                                    <div class="text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Серверні логи з'являться тут...
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрити</button>
+                                <button type="button" class="btn btn-primary" onclick="refreshServerLogs()">Оновити</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Видаляємо попереднє модальне вікно якщо воно існує
+            const existingModal = document.getElementById('serverLogsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Додаємо нове модальне вікно
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Показуємо модальне вікно
+            const modal = new bootstrap.Modal(document.getElementById('serverLogsModal'));
+            modal.show();
+            
+            // Завантажуємо серверні логи
+            refreshServerLogs();
+        }
+
+        function refreshServerLogs() {
+            const logsContent = document.getElementById('server-logs-content');
+            if (!logsContent) return;
+            
+            logsContent.innerHTML = `
+                <div class="text-muted text-center">
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    Завантаження серверних логів...
+                </div>
+            `;
+            
+            // Завантажуємо реальні серверні логи
+            fetch('/api/server-logs')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.logs && data.logs.length > 0) {
+                        let logsHtml = '';
+                        data.logs.slice(-20).reverse().forEach(log => {
+                            const timestamp = new Date(log.timestamp).toLocaleTimeString();
+                            let typeClass = 'text-info';
+                            let iconClass = 'fas fa-info-circle';
+                            
+                            // Визначаємо стиль залежно від типу логу
+                            if (log.type.includes('worldbank_request')) {
+                                typeClass = 'text-primary';
+                                iconClass = 'fas fa-globe';
+                            } else if (log.type.includes('worldbank_indicator_request')) {
+                                typeClass = 'text-primary';
+                                iconClass = 'fas fa-chart-line';
+                            } else if (log.type.includes('worldbank_indicator_success')) {
+                                typeClass = 'text-success';
+                                iconClass = 'fas fa-check-circle';
+                            } else if (log.type.includes('worldbank_indicator_error') || log.type.includes('worldbank_trends_error')) {
+                                typeClass = 'text-danger';
+                                iconClass = 'fas fa-exclamation-triangle';
+                            } else if (log.type.includes('worldbank_indicator_no_data') || log.type.includes('worldbank_trends_no_data')) {
+                                typeClass = 'text-warning';
+                                iconClass = 'fas fa-exclamation-circle';
+                            } else if (log.type.includes('worldbank_comparison')) {
+                                typeClass = 'text-info';
+                                iconClass = 'fas fa-balance-scale';
+                            } else if (log.type.includes('worldbank_trends')) {
+                                typeClass = 'text-info';
+                                iconClass = 'fas fa-trending-up';
+                            }
+                            
+                            logsHtml += `
+                                <div class="mb-3 p-3 border rounded">
+                                    <div class="${typeClass}">
+                                        <i class="${iconClass} me-2"></i>
+                                        <strong>[${timestamp}] ${log.message}</strong>
+                                    </div>
+                                    <div class="ms-3 mt-2">
+                                        ${log.details && Object.keys(log.details).length > 0 ? `
+                                            ${log.details.url ? `
+                                                <div class="mb-2">
+                                                    <strong>URL:</strong><br>
+                                                    <code style="font-size: 0.8rem; word-break: break-all; background-color: #f8f9fa; padding: 0.25rem; border-radius: 0.25rem;">${log.details.url}</code>
+                                                </div>
+                                            ` : ''}
+                                            ${log.details.countries ? `
+                                                <div class="mb-2">
+                                                    <strong>Країни:</strong> ${Array.isArray(log.details.countries) ? log.details.countries.join(', ') : log.details.countries}
+                                                </div>
+                                            ` : ''}
+                                            ${log.details.indicator ? `
+                                                <div class="mb-2">
+                                                    <strong>Показник:</strong> ${log.details.indicator}
+                                                </div>
+                                            ` : ''}
+                                            ${log.details.indicators ? `
+                                                <div class="mb-2">
+                                                    <strong>Показники:</strong> ${Array.isArray(log.details.indicators) ? log.details.indicators.join(', ') : log.details.indicators}
+                                                </div>
+                                            ` : ''}
+                                            ${log.details.years ? `
+                                                <div class="mb-2">
+                                                    <strong>Роки:</strong> ${Array.isArray(log.details.years) ? log.details.years.join(', ') : log.details.years}
+                                                </div>
+                                            ` : ''}
+                                            ${log.details.records_count ? `
+                                                <div class="mb-2">
+                                                    <strong>Записів отримано:</strong> ${log.details.records_count}
+                                                </div>
+                                            ` : ''}
+                                            ${log.details.error ? `
+                                                <div class="mb-2">
+                                                    <strong>Помилка:</strong><br>
+                                                    <span class="text-danger">${log.details.error}</span>
+                                                </div>
+                                            ` : ''}
+                                            ${log.details.date_range ? `
+                                                <div class="mb-2">
+                                                    <strong>Діапазон дат:</strong> ${log.details.date_range}
+                                                </div>
+                                            ` : ''}
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        logsContent.innerHTML = logsHtml || '<div class="text-muted">Немає логів</div>';
+                    } else {
+                        logsContent.innerHTML = '<div class="text-muted">Немає логів</div>';
+                    }
+                })
+                .catch(error => {
+                    logsContent.innerHTML = `
+                        <div class="text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Помилка завантаження логів: ${error.message}
+                        </div>
+                    `;
+                });
+        }
+
+        function clearCache() {
+            if (confirm('Ви впевнені, що хочете очистити кеш World Bank API? Це призведе до нових запитів до зовнішнього API.')) {
+                fetch('/api/clear-cache', { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert('Кеш очищено успішно!');
+                        // Оновлюємо серверні логи після очищення кешу
+                        refreshServerLogs();
+                    })
+                    .catch(error => {
+                        alert('Помилка очищення кешу: ' + error.message);
+                    });
+            }
+        }
+
+        // Перехоплення fetch запитів для логування
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options = {}) {
+            if (url.includes('/api/worldbank/')) {
+                const startTime = Date.now();
+                const method = options.method || 'GET';
+                const params = new URLSearchParams(url.split('?')[1] || '');
+                
+                const requestId = logApiRequest(method, url, Object.fromEntries(params), startTime);
+                
+                return originalFetch(url, options)
+                    .then(response => {
+                        const responseTime = Date.now() - startTime;
+                        
+                        if (response.ok) {
+                            return response.clone().json()
+                                .then(data => {
+                                    logApiResponse(requestId, data, null, responseTime);
+                                    return response;
+                                })
+                                .catch(() => {
+                                    logApiResponse(requestId, { status: response.status }, null, responseTime);
+                                    return response;
+                                });
+                        } else {
+                            logApiResponse(requestId, { status: response.status }, new Error(`HTTP ${response.status}`), responseTime);
+                            return response;
+                        }
+                    })
+                    .catch(error => {
+                        const responseTime = Date.now() - startTime;
+                        logApiResponse(requestId, null, error, responseTime);
+                        throw error;
+                    });
+            }
+            
+            return originalFetch(url, options);
+        };
     </script>
 </body>
 </html>

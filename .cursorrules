@@ -15,5 +15,9 @@ projectRules:
     rule: "Make Git commits ONLY in English language. Use clear, descriptive commit messages."
   - description: Code comments language
     rule: "Write code comments in two languages: English and Ukrainian (en/uk). Use format: '// English comment / Український коментар' or separate lines for each language."
+  - description: Server startup
+    rule: "For local development: use 'python start_simple.py'. For Render deployment: use 'python run_server.py'. Never run 'python app/main.py' directly as it causes import errors."
+  - description: Data sources priority
+    rule: "Always prioritize: 1) Live API data, 2) Cached/saved data from previous API calls, 3) Never use demo/fake data. If API is unavailable, use localStorage cached data or show appropriate error message."
 
 

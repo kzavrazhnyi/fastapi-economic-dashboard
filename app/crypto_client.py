@@ -17,9 +17,9 @@ class CryptoDataProvider:
     def __init__(self):
         # In-memory cache for API responses / Кеш в пам'яті для відповідей API
         self._cache = {}
-        self._cache_ttl = 300  # 5 minutes cache TTL / TTL кешу 5 хвилин
+        self._cache_ttl = 600  # 10 minutes cache TTL / TTL кешу 10 хвилин
         self._last_request_time = 0
-        self._min_request_interval = 2  # Minimum 2 seconds between requests / Мінімум 2 секунди між запитами
+        self._min_request_interval = 5  # Minimum 5 seconds between requests / Мінімум 5 секунд між запитами
 
     def _get_cache_key(self, endpoint: str, params: Dict[str, Any]) -> str:
         """Generate cache key for API request / Генерує ключ кешу для API запиту"""

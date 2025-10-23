@@ -24,6 +24,12 @@ class WorldBankDataProvider:
     """Клас для отримання економетричних даних зі Світового банку"""
     
     def __init__(self):
+        # In-memory cache for API responses / Кеш в пам'яті для відповідей API
+        self._cache = {}
+        self._cache_ttl = 1800  # 30 minutes cache TTL / TTL кешу 30 хвилин
+        self._last_request_time = 0
+        self._min_request_interval = 10  # Minimum 10 seconds between requests / Мінімум 10 секунд між запитами
+        
         self.indicators = {
             'GDP': 'NY.GDP.MKTP.CD',  # ВВП (поточні ціни, долари США)
             'GDP_PER_CAPITA': 'NY.GDP.PCAP.CD',  # ВВП на душу населення
@@ -44,7 +50,6 @@ class WorldBankDataProvider:
             'FR': 'Франція',
             'GB': 'Великобританія',
             'PL': 'Польща',
-            'RU': 'Росія',
             'CN': 'Китай',
             'JP': 'Японія',
             'IN': 'Індія',
@@ -55,88 +60,306 @@ class WorldBankDataProvider:
             'ES': 'Іспанія',
         }
     
+    def _get_cache_key(self, endpoint: str, params: Dict[str, any]) -> str:
+        """Generate cache key for API request / Генерує ключ кешу для API запиту"""
+        sorted_params = sorted(params.items())
+        return f"{endpoint}:{':'.join(f'{k}={v}' for k, v in sorted_params)}"
+
+    def _is_cache_valid(self, cache_key: str) -> bool:
+        """Check if cached data is still valid / Перевіряє чи кешовані дані ще актуальні"""
+        if cache_key not in self._cache:
+            return False
+        cached_time, _ = self._cache[cache_key]
+        return datetime.now() - cached_time < timedelta(seconds=self._cache_ttl)
+
+    def _get_from_cache(self, cache_key: str) -> any:
+        """Get data from cache if valid / Отримує дані з кешу якщо актуальні"""
+        if self._is_cache_valid(cache_key):
+            _, data = self._cache[cache_key]
+            print(f"Returning cached World Bank data for key: {cache_key}")
+            return data
+        return None
+
+    def _save_to_cache(self, cache_key: str, data: any):
+        """Save data to cache / Зберігає дані в кеш"""
+        self._cache[cache_key] = (datetime.now(), data)
+        print(f"Cached World Bank data for key: {cache_key}")
+
+    def _rate_limit_delay(self):
+        """Apply rate limiting / Застосовує обмеження частоти запитів"""
+        import time
+        current_time = time.time()
+        time_since_last_request = current_time - self._last_request_time
+        if time_since_last_request < self._min_request_interval:
+            delay = self._min_request_interval - time_since_last_request
+            print(f"World Bank API rate limiting: waiting {delay:.2f} seconds")
+            time.sleep(delay)
+        self._last_request_time = time.time()
+
+    def get_last_update_time(self, endpoint: str, params: Dict[str, any]) -> str:
+        """Get last update time for cached data / Отримує час останнього оновлення кешованих даних"""
+        cache_key = self._get_cache_key(endpoint, params)
+        if cache_key in self._cache:
+            cached_time, _ = self._cache[cache_key]
+            return cached_time.strftime("%d.%m.%Y, %H:%M:%S")
+        return None
+    
+    def clear_cache(self):
+        """Clear all cached data / Очистити весь кеш"""
+        self._cache.clear()
+        print("Кеш World Bank API очищено")
+    
     def get_economic_indicators(self, country_codes: List[str] = None, 
                               indicators: List[str] = None, 
                               start_year: int = 2020, 
                               end_year: int = 2023) -> pd.DataFrame:
         """
         Отримати економетричні показники зі Світового банку
-        
-        Args:
-            country_codes: Список кодів країн (за замовченням всі доступні)
-            indicators: Список показників (за замовченням всі доступні)
-            start_year: Початковий рік
-            end_year: Кінцевий рік
-        
-        Returns:
-            DataFrame з даними
+        Get econometric indicators from the World Bank
         """
         try:
+            # Check cache / Перевіряємо кеш
+            params = {
+                'country_codes': country_codes,
+                'indicators': indicators,
+                'start_year': start_year,
+                'end_year': end_year
+            }
+            cache_key = self._get_cache_key('economic_indicators', params)
+            cached_data = self._get_from_cache(cache_key)
+            if cached_data is not None:
+                return cached_data
+            
+            # Apply rate limiting / Застосовуємо rate limiting
+            self._rate_limit_delay()
             if country_codes is None:
                 country_codes = list(self.countries.keys())
             
-            # Визначаємо індикатори: приймаємо як ключі (GDP, INFLATION) або вже коди (NY.GDP.MKTP.CD)
+            # Define indicators / Визначаємо індикатори
             if indicators is None:
                 indicator_codes = list(self.indicators.values())
                 indicator_names = list(self.indicators.keys())
             else:
-                # Мапимо дружні імена на коди; якщо прийшов вже код, залишаємо як є
                 indicator_codes = [self.indicators.get(ind, ind) for ind in indicators]
-                # Зворотна мапа код-> ім'я для перейменування колонок
                 code_to_name = {code: name for name, code in self.indicators.items()}
                 indicator_names = [code_to_name.get(code, code) for code in indicator_codes]
             
-            # Обмежуємо кількість країн та показників для стабільності API
-            country_codes = country_codes[:8]  # Максимум 8 країн
-            indicator_codes = indicator_codes[:4]  # Максимум 4 показники
+            # Limit API parameters for stability / Обмежуємо кількість країн та показників
+            country_codes = country_codes[:8]
+            indicator_codes = indicator_codes[:4]
             indicator_names = indicator_names[:4]
             
+            # Get data from World Bank with error handling
             # Отримуємо дані зі Світового банку з обробкою помилок
             try:
-                data = wb.data.DataFrame(
-                    indicator_codes,
-                    country_codes,
-                    time=range(start_year, end_year + 1),
-                    labels=True,
-                    skipBlanks=True
-                )
+                # Логування параметрів для дебагу / Logging parameters for debugging
+                print(f"🔍 World Bank API параметри:")
+                print(f"   Країни: {country_codes}")
+                print(f"   Показники: {indicator_codes}")
+                print(f"   Роки: {start_year}-{end_year}")
+                print(f"   Діапазон: {list(range(start_year, end_year + 1))}")
+                
+                # Додаємо лог до серверних логів
+                try:
+                    import sys
+                    import os
+                    # Додаємо батьківську директорію до Python path
+                    parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    if parent_dir not in sys.path:
+                        sys.path.append(parent_dir)
+                    from app.main import add_server_log
+                    
+                    add_server_log("worldbank_request", "Запит до World Bank API", {
+                        "countries": country_codes,
+                        "indicators": indicator_codes,
+                        "years": list(range(start_year, end_year + 1)),
+                        "start_year": start_year,
+                        "end_year": end_year
+                    })
+                except Exception as log_error:
+                    print(f"Помилка логування: {log_error}")
+                
+                # Use direct HTTP requests instead of wbgapi for better reliability
+                # / Використовуємо прямі HTTP запити замість wbgapi для кращої надійності
+                import requests
+                
+                # Build URL for World Bank API v2
+                # / Створюємо URL для World Bank API v2
+                countries_str = ';'.join(country_codes)
+                date_range = f"{start_year}:{end_year}"
+                
+                print(f"🌐 Прямі запити до World Bank API:")
+                print(f"   Країни: {countries_str}")
+                print(f"   Показники: {indicator_codes}")
+                print(f"   Роки: {date_range}")
+                
+                # Make separate requests for each indicator (API limitation)
+                # / Робимо окремі запити для кожного показника (обмеження API)
+                all_data = []
+                
+                for indicator_code in indicator_codes:
+                    url = f"https://api.worldbank.org/v2/country/{countries_str}/indicator/{indicator_code}?date={date_range}&format=json&per_page=1000"
+                    
+                    print(f"   Запит для {indicator_code}: {url}")
+                    
+                    # Додаємо детальний лог для кожного показника
+                    try:
+                        import sys
+                        import os
+                        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                        from app.main import add_server_log
+                        
+                        add_server_log("worldbank_indicator_request", f"Запит показника {indicator_code}", {
+                            "url": url,
+                            "indicator": indicator_code,
+                            "countries": countries_str,
+                            "date_range": date_range
+                        })
+                    except Exception as log_error:
+                        print(f"Помилка логування показника: {log_error}")
+                    
+                    try:
+                        response = requests.get(url, timeout=30)
+                        response.raise_for_status()
+                        
+                        data_json = response.json()
+                        
+                        if data_json and len(data_json) >= 2 and data_json[1]:
+                            metadata = data_json[0]
+                            data_records = data_json[1]
+                            
+                            print(f"   ✅ Отримано {len(data_records)} записів для {indicator_code}")
+                            
+                            # Додаємо лог успішного запиту
+                            try:
+                                import sys
+                                import os
+                                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                                from app.main import add_server_log
+                                
+                                add_server_log("worldbank_indicator_success", f"Успішний запит показника {indicator_code}", {
+                                    "indicator": indicator_code,
+                                    "records_count": len(data_records),
+                                    "total_records": metadata.get('total', 0),
+                                    "url": url
+                                })
+                            except Exception as log_error:
+                                print(f"Помилка логування успіху: {log_error}")
+                            
+                            # Convert to DataFrame format
+                            # / Перетворюємо в формат DataFrame
+                            for record in data_records:
+                                if record.get('value') is not None:
+                                    all_data.append({
+                                        'Country': record['country']['id'],
+                                        'Country_Name': record['country']['value'],
+                                        'Year': int(record['date']),
+                                        'Indicator': record['indicator']['id'],
+                                        'Value': record['value']
+                                    })
+                        else:
+                            print(f"   ⚠️ Немає даних для {indicator_code}")
+                            
+                            # Додаємо лог відсутності даних
+                            try:
+                                import sys
+                                import os
+                                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                                from app.main import add_server_log
+                                
+                                add_server_log("worldbank_indicator_no_data", f"Немає даних для показника {indicator_code}", {
+                                    "indicator": indicator_code,
+                                    "url": url
+                                })
+                            except Exception as log_error:
+                                print(f"Помилка логування відсутності даних: {log_error}")
+                            
+                    except Exception as indicator_error:
+                        print(f"   ❌ Помилка для {indicator_code}: {indicator_error}")
+                        
+                        # Додаємо лог помилки
+                        try:
+                            import sys
+                            import os
+                            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                            from app.main import add_server_log
+                            
+                            add_server_log("worldbank_indicator_error", f"Помилка запиту показника {indicator_code}", {
+                                "indicator": indicator_code,
+                                "url": url,
+                                "error": str(indicator_error),
+                                "error_type": type(indicator_error).__name__
+                            })
+                        except Exception as log_error:
+                            print(f"Помилка логування помилки: {log_error}")
+                        
+                        continue
+                
+                if not all_data:
+                    raise Exception("Немає даних після обробки всіх показників")
+                
+                print(f"✅ Загалом отримано {len(all_data)} записів")
+                
+                # Create DataFrame and pivot to have indicators as columns
+                # / Створюємо DataFrame та повертаємо показники як колонки
+                df_temp = pd.DataFrame(all_data)
+                df = df_temp.pivot_table(
+                    index=['Country', 'Country_Name', 'Year'], 
+                    columns='Indicator', 
+                    values='Value', 
+                    aggfunc='first'
+                ).reset_index()
+                
+                # Rename columns to friendly names
+                # / Перейменовуємо колонки на дружні назви
+                code_to_name = {code: name for name, code in self.indicators.items()}
+                rename_map = {code: code_to_name.get(code, code) for code in df.columns if code not in ['Country', 'Country_Name', 'Year']}
+                df.rename(columns=rename_map, inplace=True)
 
-                # Якщо порожньо – кидаємо виняток
-                if data.empty:
-                    raise Exception("World Bank API повернув порожні дані")
 
             except Exception as api_error:
-                print(f"API помилка wbgapi: {api_error}")
-                raise Exception(f"World Bank API недоступний: {api_error}")
+                print(f"API помилка World Bank: {api_error}")
+                print("Повертаємо порожній DataFrame.")
+                
+                # Логування помилки
+                print(f"🌐 Помилка запиту до World Bank API:")
+                print(f"   URL: {url if 'url' in locals() else 'N/A'}")
+                print(f"   Параметри: countries={country_codes}, indicators={indicator_codes}, years={list(range(start_year, end_year + 1))}")
+                print(f"   Відповідь API: {str(api_error)}")
+                
+                # Create an empty DataFrame with the expected columns to prevent crashes
+                # / Створюємо порожній DataFrame з очікуваними колонками, щоб уникнути збоїв
+                cols = ['Country', 'Country_Name', 'Year'] + indicator_names
+                df = pd.DataFrame(columns=cols)
             
-            # Перетворюємо дані в зручний формат
-            df = data.reset_index()
+            # Add country names if not already present / Додаємо назви країн якщо ще немає
+            if 'Country_Name' not in df.columns:
+                df['Country_Name'] = df['Country'].map(self.countries)
+                df['Country_Name'] = df['Country_Name'].fillna(df['Country'])
             
-            # Перейменовуємо колонки за вибраними індикаторами
-            # Після reset_index перші дві колонки це 'economy'/'Country' і 'time'/'Year' (з labels=True)
-            # Інші — це коди індикаторів -> перейменовуємо у дружні імена
-            code_to_name = {code: name for name, code in self.indicators.items()}
-            rename_map = {code: code_to_name.get(code, code) for code in df.columns if code not in ['Country', 'Year', 'economy', 'time']}
-            df.rename(columns=rename_map, inplace=True)
-            # Узгоджуємо назви перших двох колонок
-            if 'economy' in df.columns:
-                df.rename(columns={'economy': 'Country'}, inplace=True)
-            if 'time' in df.columns:
-                df.rename(columns={'time': 'Year'}, inplace=True)
+            # Reorder columns / Переміщуємо колонки
+            # Ensure all requested/generated indicators are in the list
+            # / Переконуємося, що всі запитані/згенеровані індикатори є в списку
+            final_indicator_names = [name for name in indicator_names if name in df.columns]
+            cols = ['Country', 'Country_Name', 'Year'] + final_indicator_names
             
-            # Додаємо назви країн
-            df['Country_Name'] = df['Country'].map(self.countries)
-            df['Country_Name'] = df['Country_Name'].fillna(df['Country'])
+            # Select only columns that actually exist in df
+            # / Вибираємо тільки ті колонки, які реально існують в df
+            existing_cols = [col for col in cols if col in df.columns]
+            df = df[existing_cols]
             
-            # Переміщуємо колонки
-            cols = ['Country', 'Country_Name', 'Year'] + indicator_names
-            df = df[cols]
+            # Save to cache / Зберігаємо в кеш
+            self._save_to_cache(cache_key, df)
             
             return df
             
         except Exception as e:
-            print(f"Помилка отримання даних зі Світового банку: {e}")
-            raise Exception(f"World Bank API недоступний: {e}")
+            # This outer catch handles unexpected errors in *this* function's logic
+            # / Цей зовнішній catch обробляє неочікувані помилки в логіці *цієї* функції
+            print(f"Критична помилка в get_economic_indicators: {e}")
+            # Return an empty DF as a last resort / Повертаємо порожній DF в крайньому випадку
+            cols = ['Country', 'Country_Name', 'Year'] + (indicator_names if 'indicator_names' in locals() else [])
+            return pd.DataFrame(columns=cols)
 
     
     def get_country_comparison(self, countries: List[str], 
@@ -159,16 +382,92 @@ class WorldBankDataProvider:
             
             # Дозволяємо як дружню назву, так і вже код
             indicator_code = self.indicators.get(indicator, indicator)
-            data = wb.data.DataFrame(
-                [indicator_code],
-                countries,
-                time=range(start_year, current_year + 1),
-                labels=True,
-                skipBlanks=True
-            )
             
-            df = data.reset_index()
-            df.columns = ['Country', 'Year', 'Value']
+            # Логування запиту порівняння країн
+            countries_str = ';'.join(countries)
+            date_range = f"{start_year}:{current_year}"
+            url = f"https://api.worldbank.org/v2/country/{countries_str}/indicator/{indicator_code}?date={date_range}&format=json&per_page=1000"
+            
+            print(f"🔍 Запит порівняння країн до World Bank API:")
+            print(f"   URL: {url}")
+            print(f"   Параметри: countries={countries}, indicator={indicator_code}, years={list(range(start_year, current_year + 1))}")
+            
+            # Додаємо лог до серверних логів
+            try:
+                import sys
+                import os
+                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                from app.main import add_server_log
+                
+                add_server_log("worldbank_comparison_request", "Запит порівняння країн", {
+                    "url": url,
+                    "countries": countries,
+                    "indicator": indicator_code,
+                    "years": list(range(start_year, current_year + 1))
+                })
+            except Exception as log_error:
+                print(f"Помилка логування порівняння: {log_error}")
+            
+            # Use direct HTTP request instead of wbgapi
+            # / Використовуємо прямий HTTP запит замість wbgapi
+            import requests
+            
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            
+            data_json = response.json()
+            
+            if not data_json or len(data_json) < 2 or not data_json[1]:
+                # Додаємо лог відсутності даних
+                try:
+                    import sys
+                    import os
+                    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    from app.main import add_server_log
+                    
+                    add_server_log("worldbank_comparison_no_data", "Немає даних для порівняння", {
+                        "url": url,
+                        "countries": countries,
+                        "indicator": indicator_code
+                    })
+                except Exception as log_error:
+                    print(f"Помилка логування відсутності даних: {log_error}")
+                
+                raise Exception("World Bank API повернув порожні дані для порівняння")
+            
+            data_records = data_json[1]
+            
+            # Додаємо лог успішного запиту
+            try:
+                import sys
+                import os
+                sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                from app.main import add_server_log
+                
+                add_server_log("worldbank_comparison_success", "Успішний запит порівняння", {
+                    "url": url,
+                    "countries": countries,
+                    "indicator": indicator_code,
+                    "records_count": len(data_records)
+                })
+            except Exception as log_error:
+                print(f"Помилка логування успіху порівняння: {log_error}")
+            
+            # Convert to DataFrame format
+            # / Перетворюємо в формат DataFrame
+            df_data = []
+            for record in data_records:
+                if record.get('value') is not None:
+                    df_data.append({
+                        'Country': record['country']['id'],
+                        'Year': int(record['date']),
+                        'Value': record['value']
+                    })
+            
+            if not df_data:
+                raise Exception("Немає даних після обробки")
+            
+            df = pd.DataFrame(df_data)
             df['Country_Name'] = df['Country'].map(self.countries)
             df['Country_Name'] = df['Country_Name'].fillna(df['Country'])
             
@@ -176,7 +475,9 @@ class WorldBankDataProvider:
             
         except Exception as e:
             print(f"Помилка порівняння країн: {e}")
-            return self._get_sample_comparison_data()
+            # Return empty DataFrame instead of calling non-existent method
+            # / Повертаємо порожній DataFrame замість виклику неіснуючого методу
+            return pd.DataFrame(columns=['Country', 'Year', 'Value', 'Country_Name'])
     
     def get_trend_analysis(self, country: str, 
                           indicators: List[str] = None,
@@ -210,19 +511,136 @@ class WorldBankDataProvider:
             
             print(f"Обмежені параметри: показники={limited_indicators}, років={limited_years}")
             
-            data = wb.data.DataFrame(
-                limited_indicators,
-                [country],
-                time=range(current_year - limited_years, current_year + 1),
-                labels=True,
-                skipBlanks=True
-            )
+            # Use direct HTTP requests instead of wbgapi
+            # / Використовуємо прямі HTTP запити замість wbgapi
+            import requests
+            
+            all_data = []
+            
+            for indicator_code in limited_indicators:
+                date_range = f"{current_year - limited_years}:{current_year}"
+                url = f"https://api.worldbank.org/v2/country/{country}/indicator/{indicator_code}?date={date_range}&format=json&per_page=1000"
+                
+                print(f"   Запит трендів для {indicator_code}: {url}")
+                
+                # Додаємо лог для трендів
+                try:
+                    import sys
+                    import os
+                    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    from app.main import add_server_log
+                    
+                    add_server_log("worldbank_trends_request", f"Запит трендів для {indicator_code}", {
+                        "url": url,
+                        "country": country,
+                        "indicator": indicator_code,
+                        "date_range": date_range
+                    })
+                except Exception as log_error:
+                    print(f"Помилка логування трендів: {log_error}")
+                
+                try:
+                    response = requests.get(url, timeout=30)
+                    response.raise_for_status()
+                    
+                    data_json = response.json()
+                    
+                    if data_json and len(data_json) >= 2 and data_json[1]:
+                        data_records = data_json[1]
+                        
+                        print(f"   ✅ Отримано {len(data_records)} записів для трендів {indicator_code}")
+                        
+                        # Додаємо лог успішного запиту трендів
+                        try:
+                            import sys
+                            import os
+                            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                            from app.main import add_server_log
+                            
+                            add_server_log("worldbank_trends_success", f"Успішний запит трендів {indicator_code}", {
+                                "url": url,
+                                "country": country,
+                                "indicator": indicator_code,
+                                "records_count": len(data_records)
+                            })
+                        except Exception as log_error:
+                            print(f"Помилка логування успіху трендів: {log_error}")
+                        
+                        # Convert to DataFrame format
+                        # / Перетворюємо в формат DataFrame
+                        for record in data_records:
+                            if record.get('value') is not None:
+                                all_data.append({
+                                    'Country': record['country']['id'],
+                                    'Year': int(record['date']),
+                                    'Indicator': record['indicator']['id'],
+                                    'Value': record['value']
+                                })
+                    else:
+                        print(f"   ⚠️ Немає даних для трендів {indicator_code}")
+                        
+                        # Додаємо лог відсутності даних трендів
+                        try:
+                            import sys
+                            import os
+                            sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                            from app.main import add_server_log
+                            
+                            add_server_log("worldbank_trends_no_data", f"Немає даних для трендів {indicator_code}", {
+                                "url": url,
+                                "country": country,
+                                "indicator": indicator_code
+                            })
+                        except Exception as log_error:
+                            print(f"Помилка логування відсутності даних трендів: {log_error}")
+                        
+                except Exception as indicator_error:
+                    print(f"   ❌ Помилка для трендів {indicator_code}: {indicator_error}")
+                    
+                    # Додаємо лог помилки трендів
+                    try:
+                        import sys
+                        import os
+                        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                        from app.main import add_server_log
+                        
+                        add_server_log("worldbank_trends_error", f"Помилка запиту трендів {indicator_code}", {
+                            "url": url,
+                            "country": country,
+                            "indicator": indicator_code,
+                            "error": str(indicator_error),
+                            "error_type": type(indicator_error).__name__
+                        })
+                    except Exception as log_error:
+                        print(f"Помилка логування помилки трендів: {log_error}")
+                    
+                    continue
+            
+            if not all_data:
+                raise Exception("Немає даних для аналізу трендів")
+            
+            print(f"✅ Загалом отримано {len(all_data)} записів для трендів")
+            
+            # Create DataFrame and pivot to have indicators as columns
+            # / Створюємо DataFrame та повертаємо показники як колонки
+            df_temp = pd.DataFrame(all_data)
+            data = df_temp.pivot_table(
+                index=['Country', 'Year'], 
+                columns='Indicator', 
+                values='Value', 
+                aggfunc='first'
+            ).reset_index()
             
             if data.empty:
                 raise Exception("World Bank API повернув порожні дані для трендів")
             
-            df = data.reset_index()
-            df.columns = ['Country', 'Year'] + [ind for ind in indicators if self.indicators[ind] in limited_indicators]
+            # Rename columns to friendly names
+            # / Перейменовуємо колонки на дружні назви
+            code_to_name = {code: name for name, code in self.indicators.items()}
+            rename_map = {code: code_to_name.get(code, code) for code in data.columns if code not in ['Country', 'Year']}
+            data.rename(columns=rename_map, inplace=True)
+            
+            df = data
             
             # Обчислюємо тренди
             trends = {}
@@ -440,7 +858,6 @@ class WorldBankDataProvider:
             'GBP': 0.8,      # Фунт стерлінгів
             'JPY': 110.0,    # Єна
             'CNY': 6.5,      # Юань
-            'RUB': 90.0,     # Рубль
         }
     
     def convert_to_usd(self, df: pd.DataFrame, currency: str = 'USD') -> pd.DataFrame:
