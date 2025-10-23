@@ -68,6 +68,14 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
+        .chart-container-with-margins {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 0 30px 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
         .chart-title {
             color: #2c3e50;
             font-weight: bold;
@@ -234,41 +242,6 @@
             </div>
         </div>
 
-        <!-- Панель перегляду файлів -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="chart-container">
-                    <div class="chart-title">
-                        <i class="fas fa-database me-2"></i>
-                        Перегляд файлів даних
-                        <button class="btn btn-sm btn-outline-success ms-2" onclick="loadFilesList()" title="Оновити список файлів">
-                            <i class="fas fa-sync-alt"></i> Оновити
-                        </button>
-                    </div>
-                    <div id="files-panel">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <h6>Файли даних</h6>
-                                <div id="files-list" class="list-group">
-                                    <!-- Список файлів буде завантажений тут -->
-                                </div>
-                            </div>
-                            <div class="col-md-8">
-                                <h6>Вміст файлу</h6>
-                                <div id="file-content">
-                                    <p class="text-muted">Оберіть файл для перегляду</p>
-                                </div>
-                                <div id="file-pagination" class="mt-3">
-                                    <!-- Пагінація буде тут -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
         <!-- Графіки -->
         <div class="row">
             <!-- Графік продажів у часі -->
@@ -318,71 +291,45 @@
             </div>
         </div>
         
-        <!-- Панель криптовалют (переміщено в кінець та уніфіковано ширину) -->
+        <!-- Панель перегляду файлів -->
         <div class="row mb-4">
             <div class="col-md-12">
                 <div class="chart-container">
                     <div class="chart-title">
-                        <i class="fab fa-bitcoin me-2"></i>
-                        Огляд ринку криптовалют
-                        <button class="btn btn-sm btn-outline-success ms-2" onclick="loadCryptoMarketData()" title="Оновити дані" id="crypto-refresh-btn">
+                        <i class="fas fa-database me-2"></i>
+                        Перегляд файлів даних
+                        <button class="btn btn-sm btn-outline-success ms-2" onclick="loadFilesList()" title="Оновити список файлів">
                             <i class="fas fa-sync-alt"></i> Оновити
                         </button>
-                        <button class="btn btn-sm btn-outline-warning ms-2" onclick="clearSavedCryptoData()" title="Очистити збережені дані" id="crypto-clear-btn">
-                            <i class="fas fa-trash-alt"></i> Очистити
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger ms-1" onclick="closeAllModals()" title="Закрити всі модальні вікна" id="crypto-close-modals-btn">
-                            <i class="fas fa-times"></i> Закрити модалі
-                        </button>
-                        <span id="crypto-status" class="ms-3 text-muted small"></span>
-                        <div class="ms-3 d-inline-block">
-                            <select id="crypto-currency" class="form-select form-select-sm" style="width: auto; display: inline-block;">
-                                <option value="usd" selected>USD</option>
-                                <option value="uah">UAH</option>
-                                <option value="eur">EUR</option>
-                            </select>
-                        </div>
                     </div>
-                    <div class="d-flex align-items-center gap-4 mb-2">
-                        <div class="small text-muted">
-                            <i class="fas fa-globe me-1"></i>
-                            Загальна капіталізація ринку: <strong id="crypto-global-mcap">—</strong>
+                    <div id="files-panel">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6>Файли даних</h6>
+                                <div id="files-list" class="list-group">
+                                    <!-- Список файлів буде завантажений тут -->
+                                </div>
+                            </div>
+                            <div class="col-md-8">
+                                <h6>Вміст файлу</h6>
+                                <div id="file-content">
+                                    <p class="text-muted">Оберіть файл для перегляду</p>
+                                </div>
+                                <div id="file-pagination" class="mt-3">
+                                    <!-- Пагінація буде тут -->
+                                </div>
+                            </div>
                         </div>
-                        <div class="small text-muted">
-                            <i class="fab fa-btc me-1"></i>
-                            Домінація BTC: <strong id="crypto-global-btc">—</strong>
-                        </div>
-                        <div class="small text-muted">
-                            <span id="crypto-global-status"></span>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>#</th>
-                                    <th>Назва</th>
-                                    <th>Ціна</th>
-                                    <th>24г (%)</th>
-                                    <th>Ринкова капіталізація</th>
-                                    <th>Об'єм (24г)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="crypto-market-table"></tbody>
-                        </table>
-                    </div>
-                    <div class="mt-2 small text-muted">
-                        Джерело даних: <a href="https://www.coingecko.com/en/api/documentation" target="_blank" rel="noopener noreferrer">CoinGecko API</a>. Дані оновлюються з публічного API без ключа.
                     </div>
                 </div>
             </div>
         </div>
+        
 
-        <!-- Панель даних Світового банку (переміщено в кінець сторінки) -->
+        <!-- Панель даних Світового банку (переміщено в кінець сторінки з відступами) -->
         <div class="row mb-4">
             <div class="col-md-12">
-                <div class="chart-container">
+                <div class="chart-container-with-margins">
                     <div class="chart-title">
                         <i class="fas fa-globe me-2"></i>
                         Економетричні дані Світового банку
@@ -856,6 +803,124 @@
         </div>
     </div>
 
+    <!-- Панель криптовалют (повна ширина з відступами) -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="chart-container-with-margins">
+                <div class="chart-title">
+                    <i class="fab fa-bitcoin me-2"></i>
+                    Огляд ринку криптовалют
+                    <button class="btn btn-sm btn-outline-success ms-2" onclick="loadCryptoMarketData()" title="Оновити дані" id="crypto-refresh-btn">
+                        <i class="fas fa-sync-alt"></i> Оновити
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning ms-2" onclick="clearSavedCryptoData()" title="Очистити збережені дані" id="crypto-clear-btn">
+                        <i class="fas fa-trash-alt"></i> Очистити
+                    </button>
+                    <span id="crypto-status" class="ms-3 text-muted small"></span>
+                    <div class="ms-3 d-inline-block">
+                        <select id="crypto-currency" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                            <option value="usd" selected>USD</option>
+                            <option value="uah">UAH</option>
+                            <option value="eur">EUR</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-4 mb-2">
+                    <div class="small text-muted">
+                        <i class="fas fa-globe me-1"></i>
+                        Загальна капіталізація ринку: <strong id="crypto-global-mcap">—</strong>
+                    </div>
+                    <div class="small text-muted">
+                        <i class="fab fa-btc me-1"></i>
+                        Домінація BTC: <strong id="crypto-global-btc">—</strong>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Назва</th>
+                                <th>Ціна</th>
+                                <th>24г (%)</th>
+                                <th>Ринкова капіталізація</th>
+                                <th>Об'єм (24г)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="crypto-market-table"></tbody>
+                    </table>
+                </div>
+                <div class="mt-2 small text-muted">
+                    Джерело даних: <a href="https://www.coingecko.com/en/api/documentation" target="_blank" rel="noopener noreferrer">CoinGecko API</a>. Дані оновлюються з публічного API без ключа.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Панель Yahoo Finance (під криптовалютами з відступами) -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="chart-container-with-margins">
+                <div class="chart-title">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Фінансові ринки Yahoo Finance
+                    <button class="btn btn-sm btn-outline-success ms-2" onclick="loadYahooFinanceData()" title="Оновити дані" id="yahoo-refresh-btn">
+                        <i class="fas fa-sync-alt"></i> Оновити
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning ms-2" onclick="clearYahooFinanceData()" title="Очистити збережені дані" id="yahoo-clear-btn">
+                        <i class="fas fa-trash-alt"></i> Очистити
+                    </button>
+                    <span id="yahoo-status" class="ms-3 text-muted small"></span>
+                    <div class="ms-3 d-inline-block">
+                        <select id="yahoo-symbol" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                            <option value="AAPL" selected>AAPL (Apple)</option>
+                            <option value="MSFT">MSFT (Microsoft)</option>
+                            <option value="GOOGL">GOOGL (Google)</option>
+                            <option value="AMZN">AMZN (Amazon)</option>
+                            <option value="TSLA">TSLA (Tesla)</option>
+                            <option value="NVDA">NVDA (NVIDIA)</option>
+                            <option value="META">META (Meta)</option>
+                            <option value="BTC-USD">BTC-USD (Bitcoin)</option>
+                            <option value="ETH-USD">ETH-USD (Ethereum)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-4 mb-2">
+                    <div class="small text-muted">
+                        <i class="fas fa-dollar-sign me-1"></i>
+                        Поточна ціна: <strong id="yahoo-current-price">—</strong>
+                    </div>
+                    <div class="small text-muted">
+                        <i class="fas fa-arrow-up me-1"></i>
+                        Зміна: <strong id="yahoo-change">—</strong>
+                    </div>
+                    <div class="small text-muted">
+                        <i class="fas fa-percentage me-1"></i>
+                        Зміна %: <strong id="yahoo-change-percent">—</strong>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Показник</th>
+                                <th>Значення</th>
+                                <th>Зміна</th>
+                                <th>Зміна %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="yahoo-finance-table"></tbody>
+                    </table>
+                </div>
+                <div class="mt-2 small text-muted">
+                    Джерело даних: <a href="https://finance.yahoo.com/" target="_blank" rel="noopener noreferrer">Yahoo Finance</a>. Дані оновлюються з публічного API.
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -867,6 +932,30 @@
             profit: [],
             stats: {}
         };
+
+        // Тест функціональності
+        console.log('✅ JavaScript завантажується правильно');
+        
+        // Перевірка наявності основних функцій
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ DOM завантажений');
+            
+            // Перевірка наявності кнопок
+            const cryptoBtn = document.getElementById('crypto-refresh-btn');
+            const worldbankBtn = document.getElementById('worldbank-refresh-btn');
+            const filesBtn = document.querySelector('[onclick="loadFilesList()"]');
+            
+            console.log('🔍 Перевірка кнопок:');
+            console.log('  - crypto-refresh-btn:', cryptoBtn ? '✅' : '❌');
+            console.log('  - worldbank-refresh-btn:', worldbankBtn ? '✅' : '❌');
+            console.log('  - files button:', filesBtn ? '✅' : '❌');
+            
+            // Перевірка наявності функцій
+            console.log('🔍 Перевірка функцій:');
+            console.log('  - loadCryptoMarketData:', typeof loadCryptoMarketData === 'function' ? '✅' : '❌');
+            console.log('  - loadWorldBankData:', typeof loadWorldBankData === 'function' ? '✅' : '❌');
+            console.log('  - loadFilesList:', typeof loadFilesList === 'function' ? '✅' : '❌');
+        });
 
         // Ініціалізація сторінки
         document.addEventListener('DOMContentLoaded', function() {
@@ -896,6 +985,8 @@
             window.loadNormalizedData = loadNormalizedData;
             window.loadEconomicHealth = loadEconomicHealth;
             window.loadCryptoMarketData = loadCryptoMarketData;
+            window.loadYahooFinanceData = loadYahooFinanceData;
+            window.clearYahooFinanceData = clearYahooFinanceData;
 
             loadFilesList();
 
@@ -907,6 +998,15 @@
             } else {
                 console.log('🔄 Збережених даних немає, завантажуємо нові');
                 loadCryptoMarketData();
+            }
+
+            // Спробувати завантажити збережені Yahoo Finance дані при завантаженні сторінки
+            const savedYahooData = loadYahooFinanceDataFromStorage();
+            if (savedYahooData) {
+                console.log('📂 Показано збережені Yahoo Finance дані');
+                displaySavedYahooFinanceData(savedYahooData);
+            } else {
+                console.log('🔄 Збережених Yahoo Finance даних немає');
             }
 
             // Спробувати завантажити збережені World Bank дані при завантаженні сторінки
@@ -1088,6 +1188,213 @@
             } catch (error) {
                 console.error('❌ Помилка очищення даних:', error);
                 updateCryptoStatus('Помилка очищення даних', 'error');
+            }
+        }
+
+        // ==================== YAHOO FINANCE FUNCTIONS ====================
+        
+        // Завантаження даних з Yahoo Finance
+        async function loadYahooFinanceData() {
+            try {
+                const symbol = document.getElementById('yahoo-symbol').value;
+                updateYahooStatus('Завантаження даних...', 'loading');
+                
+                console.log(`📈 Завантаження даних Yahoo Finance для ${symbol}`);
+                
+                // Використовуємо наш проксі ендпоінт замість прямого запиту
+                const response = await fetch(`/api/yahoo-finance/${symbol}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                // Оновлюємо інтерфейс
+                updateYahooFinanceDisplay(data);
+                
+                // Зберігаємо дані в localStorage
+                const yahooData = {
+                    symbol: symbol,
+                    data: data,
+                    timestamp: new Date().toISOString()
+                };
+                
+                localStorage.setItem('yahooFinanceData', JSON.stringify(yahooData));
+                
+                updateYahooStatus('Дані успішно завантажено', 'success');
+                console.log(`✅ Yahoo Finance дані завантажено для ${symbol}`);
+                
+            } catch (error) {
+                console.error('❌ Помилка завантаження Yahoo Finance даних:', error);
+                updateYahooStatus(`Помилка: ${error.message}`, 'error');
+                
+                // Спробувати показати збережені дані
+                const savedData = loadYahooFinanceDataFromStorage();
+                if (savedData) {
+                    console.log('📂 Показуємо збережені Yahoo Finance дані');
+                    displaySavedYahooFinanceData(savedData);
+                } else {
+                    showYahooFinanceError('Не вдалося завантажити дані');
+                }
+            }
+        }
+        
+        // Оновлення відображення даних Yahoo Finance
+        function updateYahooFinanceDisplay(data) {
+            // Оновлюємо основні метрики
+            document.getElementById('yahoo-current-price').textContent = formatCurrency(data.currentPrice);
+            document.getElementById('yahoo-change').textContent = formatCurrency(data.change);
+            document.getElementById('yahoo-change-percent').textContent = formatPercentage(data.changePercent);
+            
+            // Оновлюємо таблицю
+            const tableBody = document.getElementById('yahoo-finance-table');
+            if (tableBody) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td><i class="fas fa-dollar-sign me-2"></i>Попередня закрита ціна</td>
+                        <td>${formatCurrency(data.previousClose)}</td>
+                        <td>—</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-door-open me-2"></i>Ціна відкриття</td>
+                        <td>${formatCurrency(data.open)}</td>
+                        <td>${formatCurrency(data.open - data.previousClose)}</td>
+                        <td>${formatPercentage(((data.open - data.previousClose) / data.previousClose) * 100)}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-arrow-up me-2"></i>Максимальна ціна</td>
+                        <td>${formatCurrency(data.high)}</td>
+                        <td>${formatCurrency(data.high - data.previousClose)}</td>
+                        <td>${formatPercentage(((data.high - data.previousClose) / data.previousClose) * 100)}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-arrow-down me-2"></i>Мінімальна ціна</td>
+                        <td>${formatCurrency(data.low)}</td>
+                        <td>${formatCurrency(data.low - data.previousClose)}</td>
+                        <td>${formatPercentage(((data.low - data.previousClose) / data.previousClose) * 100)}</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-chart-bar me-2"></i>Об'єм торгів</td>
+                        <td>${formatNumber(data.volume)}</td>
+                        <td>—</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-building me-2"></i>Ринкова капіталізація</td>
+                        <td>${formatCurrency(data.marketCap)}</td>
+                        <td>—</td>
+                        <td>—</td>
+                    </tr>
+                    <tr>
+                        <td><i class="fas fa-exchange-alt me-2"></i>Біржа</td>
+                        <td>${data.exchange || '—'}</td>
+                        <td>—</td>
+                        <td>—</td>
+                    </tr>
+                `;
+            }
+        }
+        
+        // Показ помилки Yahoo Finance
+        function showYahooFinanceError(message) {
+            const tableBody = document.getElementById('yahoo-finance-table');
+            if (tableBody) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            ${message}
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            // Очистити метрики
+            document.getElementById('yahoo-current-price').textContent = '—';
+            document.getElementById('yahoo-change').textContent = '—';
+            document.getElementById('yahoo-change-percent').textContent = '—';
+        }
+        
+        // Оновлення статусу Yahoo Finance
+        function updateYahooStatus(message, type) {
+            const statusEl = document.getElementById('yahoo-status');
+            if (statusEl) {
+                let icon = '';
+                let className = '';
+                
+                switch (type) {
+                    case 'loading':
+                        icon = 'fas fa-spinner fa-spin';
+                        className = 'text-primary';
+                        break;
+                    case 'success':
+                        icon = 'fas fa-check-circle';
+                        className = 'text-success';
+                        break;
+                    case 'error':
+                        icon = 'fas fa-exclamation-circle';
+                        className = 'text-danger';
+                        break;
+                    case 'info':
+                        icon = 'fas fa-info-circle';
+                        className = 'text-info';
+                        break;
+                    default:
+                        icon = 'fas fa-info-circle';
+                        className = 'text-muted';
+                }
+                
+                statusEl.innerHTML = `<i class="${icon} ${className}"></i> ${message}`;
+            }
+        }
+        
+        // Завантаження збережених даних Yahoo Finance
+        function loadYahooFinanceDataFromStorage() {
+            try {
+                const savedData = localStorage.getItem('yahooFinanceData');
+                if (savedData) {
+                    const data = JSON.parse(savedData);
+                    const now = new Date();
+                    const savedTime = new Date(data.timestamp);
+                    const hoursDiff = (now - savedTime) / (1000 * 60 * 60);
+                    
+                    // Дані валідні протягом 1 години
+                    if (hoursDiff < 1) {
+                        return data;
+                    } else {
+                        console.log('📅 Збережені Yahoo Finance дані застарілі');
+                        localStorage.removeItem('yahooFinanceData');
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Помилка завантаження збережених Yahoo Finance даних:', error);
+            }
+            return null;
+        }
+        
+        // Відображення збережених даних Yahoo Finance
+        function displaySavedYahooFinanceData(savedData) {
+            updateYahooFinanceDisplay(savedData.data);
+            updateYahooStatus('Показано збережені дані', 'info');
+        }
+        
+        // Очищення збережених даних Yahoo Finance
+        function clearYahooFinanceData() {
+            try {
+                localStorage.removeItem('yahooFinanceData');
+                console.log('🗑️ Збережені Yahoo Finance дані очищено');
+                
+                // Очистити таблицю та метрики
+                showYahooFinanceError('Дані очищено. Натисніть "Оновити" для завантаження нових даних.');
+                
+                // Оновити статус
+                updateYahooStatus('Збережені дані очищено', 'info');
+                
+            } catch (error) {
+                console.error('❌ Помилка очищення Yahoo Finance даних:', error);
+                updateYahooStatus('Помилка очищення даних', 'error');
             }
         }
 
@@ -1472,9 +1779,42 @@
                 ]);
 
                 currentData.sales = await salesRes.json();
-                currentData.trends = await trendsRes.json();
+                
+                // Обробляємо trends з перевіркою статусу
+                if (trendsRes.ok) {
+                    currentData.trends = await trendsRes.json();
+                } else {
+                    console.warn('Помилка завантаження trends:', trendsRes.status);
+                    currentData.trends = [];
+                }
+                
                 currentData.profit = await profitRes.json();
                 currentData.stats = await statsRes.json();
+                
+                // Перевіряємо структуру даних
+                if (currentData.profit && Array.isArray(currentData.profit)) {
+                    const invalidProfit = currentData.profit.filter(p => !p || !p.product_name || typeof p.product_name !== 'string');
+                    if (invalidProfit.length > 0) {
+                        console.warn('Знайдено невалідні записи profit:', invalidProfit.length);
+                    }
+                }
+                
+                // Логування для дебагу
+                console.log('Завантажені дані:', {
+                    sales: currentData.sales?.length || 0,
+                    trends: currentData.trends?.length || 0,
+                    profit: currentData.profit?.length || 0,
+                    stats: currentData.stats ? 'OK' : 'ERROR'
+                });
+                
+                // Детальне логування stats
+                if (currentData.stats) {
+                    console.log('Stats дані:', currentData.stats);
+                    console.log('Total revenue:', currentData.stats.total_revenue);
+                    console.log('Total profit:', currentData.stats.total_profit);
+                    console.log('Total sales:', currentData.stats.total_sales);
+                    console.log('Avg profit margin:', currentData.stats.avg_profit_margin);
+                }
 
                 // Заповнюємо фільтри
                 const categories = await categoriesRes.json();
@@ -1522,6 +1862,20 @@
         function updateKPIPanel() {
             const stats = currentData.stats;
             
+            console.log('updateKPIPanel called with stats:', stats);
+            
+            if (!stats) {
+                console.warn('Stats дані відсутні');
+                return;
+            }
+            
+            console.log('Updating KPI with values:', {
+                total_revenue: stats.total_revenue,
+                total_profit: stats.total_profit,
+                total_sales: stats.total_sales,
+                avg_profit_margin: stats.avg_profit_margin
+            });
+            
             document.getElementById('total-revenue').textContent = formatCurrency(stats.total_revenue);
             document.getElementById('total-profit').textContent = formatCurrency(stats.total_profit);
             document.getElementById('total-sales').textContent = formatNumber(stats.total_sales);
@@ -1540,7 +1894,7 @@
         function updateSalesChart() {
             const trends = currentData.trends;
             
-            if (!trends || trends.length === 0) {
+            if (!trends || !Array.isArray(trends) || trends.length === 0) {
                 document.getElementById('sales-chart').innerHTML = '<p>Немає даних для відображення</p>';
                 return;
             }
@@ -1571,21 +1925,28 @@
         function updateProductsChart() {
             const sales = currentData.sales;
             
-            if (!sales || sales.length === 0) {
+            if (!sales || !Array.isArray(sales) || sales.length === 0) {
                 document.getElementById('products-chart').innerHTML = '<p>Немає даних для відображення</p>';
                 return;
             }
             
-            // Групуємо за продуктами
+            // Групуємо за продуктами (фільтруємо валідні записи)
             const productRevenue = {};
             sales.forEach(sale => {
-                productRevenue[sale.product_name] = (productRevenue[sale.product_name] || 0) + sale.total_revenue;
+                if (sale && sale.product_name && typeof sale.product_name === 'string' && sale.total_revenue !== undefined) {
+                    productRevenue[sale.product_name] = (productRevenue[sale.product_name] || 0) + sale.total_revenue;
+                }
             });
 
             // Сортуємо та беремо топ-10
             const topProducts = Object.entries(productRevenue)
                 .sort(([,a], [,b]) => b - a)
                 .slice(0, 10);
+
+            if (topProducts.length === 0) {
+                document.getElementById('products-chart').innerHTML = '<p>Немає валідних даних для відображення</p>';
+                return;
+            }
 
             const trace = {
                 x: topProducts.map(([name]) => name.length > 20 ? name.substring(0, 20) + '...' : name),
@@ -1608,11 +1969,23 @@
         function updateRegionsChart() {
             const sales = currentData.sales;
             
-            // Групуємо за регіонами
+            if (!sales || !Array.isArray(sales) || sales.length === 0) {
+                document.getElementById('regions-chart').innerHTML = '<p>Немає даних для відображення</p>';
+                return;
+            }
+            
+            // Групуємо за регіонами (фільтруємо валідні записи)
             const regionRevenue = {};
             sales.forEach(sale => {
-                regionRevenue[sale.region] = (regionRevenue[sale.region] || 0) + sale.total_revenue;
+                if (sale && sale.region && typeof sale.region === 'string' && sale.total_revenue !== undefined) {
+                    regionRevenue[sale.region] = (regionRevenue[sale.region] || 0) + sale.total_revenue;
+                }
             });
+
+            if (Object.keys(regionRevenue).length === 0) {
+                document.getElementById('regions-chart').innerHTML = '<p>Немає валідних даних для відображення</p>';
+                return;
+            }
 
             const trace = {
                 labels: Object.keys(regionRevenue).map(r => r.charAt(0).toUpperCase() + r.slice(1)),
@@ -1635,8 +2008,21 @@
         function updateProfitabilityChart() {
             const profit = currentData.profit;
             
+            if (!profit || !Array.isArray(profit) || profit.length === 0) {
+                document.getElementById('profitability-chart').innerHTML = '<p>Немає даних для відображення</p>';
+                return;
+            }
+            
+            // Фільтруємо записи з валідними даними
+            const validProfit = profit.filter(p => p && p.product_name && typeof p.product_name === 'string' && p.profit_percentage !== undefined);
+            
+            if (validProfit.length === 0) {
+                document.getElementById('profitability-chart').innerHTML = '<p>Немає валідних даних для відображення</p>';
+                return;
+            }
+            
             // Сортуємо за рентабельністю
-            const sortedProfit = profit.sort((a, b) => b.profit_percentage - a.profit_percentage).slice(0, 10);
+            const sortedProfit = validProfit.sort((a, b) => b.profit_percentage - a.profit_percentage).slice(0, 10);
 
             const trace = {
                 x: sortedProfit.map(p => p.product_name.length > 15 ? p.product_name.substring(0, 15) + '...' : p.product_name),
@@ -1675,11 +2061,26 @@
                 params.append('limit', '5000');
                 
                 const response = await fetch(`/api/sales?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error(`API помилка: ${response.status} ${response.statusText}`);
+                }
+                
                 currentData.sales = await response.json();
+                
+                // Перевіряємо, чи отримали масив
+                if (!Array.isArray(currentData.sales)) {
+                    console.warn('API повернув не масив:', currentData.sales);
+                    currentData.sales = [];
+                }
                 
                 // Оновлюємо статистику
                 const statsResponse = await fetch('/api/stats');
-                currentData.stats = await statsResponse.json();
+                if (statsResponse.ok) {
+                    currentData.stats = await statsResponse.json();
+                } else {
+                    console.warn('Помилка завантаження статистики:', statsResponse.status);
+                }
                 
                 updateKPIPanel();
                 updateCharts();
@@ -1723,6 +2124,9 @@
 
         // Допоміжні функції
         function formatCurrency(amount) {
+            if (amount === undefined || amount === null || isNaN(amount)) {
+                return '—';
+            }
             return new Intl.NumberFormat('uk-UA', {
                 style: 'currency',
                 currency: 'UAH',
@@ -1732,10 +2136,16 @@
         }
 
         function formatNumber(number) {
+            if (number === undefined || number === null || isNaN(number)) {
+                return '—';
+            }
             return new Intl.NumberFormat('uk-UA').format(number);
         }
 
         function formatPercentage(percentage) {
+            if (percentage === undefined || percentage === null || isNaN(percentage)) {
+                return '—';
+            }
             return percentage.toFixed(1) + '%';
         }
 

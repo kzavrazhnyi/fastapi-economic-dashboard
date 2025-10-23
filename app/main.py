@@ -104,6 +104,9 @@ def load_data():
     """Завантаження даних з CSV файлів або генерація нових"""
     global cached_data
     
+    # Тимчасово очищуємо кеш для тестування
+    cached_data = None
+    
     if cached_data is not None:
         return cached_data
     
@@ -121,11 +124,11 @@ def load_data():
         print("Завантажуємо дані з CSV файлів...")
         try:
             cached_data = {
-                "sales": pd.read_csv(os.path.join(data_dir, "sales.csv")).to_dict('records'),
-                "inventory": pd.read_csv(os.path.join(data_dir, "inventory.csv")).to_dict('records'),
-                "profit": pd.read_csv(os.path.join(data_dir, "profit.csv")).to_dict('records'),
-                "trends": pd.read_csv(os.path.join(data_dir, "trends.csv")).to_dict('records'),
-                "stats": pd.read_csv(os.path.join(data_dir, "stats.csv")).to_dict('records')
+                "sales": pd.read_csv(os.path.join(data_dir, "sales.csv"), encoding='utf-8').to_dict('records'),
+                "inventory": pd.read_csv(os.path.join(data_dir, "inventory.csv"), encoding='utf-8').to_dict('records'),
+                "profit": pd.read_csv(os.path.join(data_dir, "profit.csv"), encoding='utf-8').to_dict('records'),
+                "trends": pd.read_csv(os.path.join(data_dir, "trends.csv"), encoding='utf-8').to_dict('records'),
+                "stats": pd.read_csv(os.path.join(data_dir, "stats.csv"), encoding='utf-8').to_dict('records')
             }
         except Exception as e:
             print(f"Помилка завантаження CSV файлів: {e}")
@@ -165,29 +168,56 @@ async def get_sales(
 ):
     """Отримання даних про продажі з можливістю фільтрації"""
     try:
+        print(f"🔍 Sales API запит: start_date={start_date}, end_date={end_date}, category={category}, region={region}, limit={limit}")
+        
         data = load_data()
         sales_df = pd.DataFrame(data["sales"])
         
+        print(f"📊 Sales DataFrame shape: {sales_df.shape}")
+        print(f"📊 Sales DataFrame columns: {list(sales_df.columns)}")
+        
+        # Конвертуємо дату в datetime для правильної фільтрації
+        if 'date' in sales_df.columns:
+            sales_df['date'] = pd.to_datetime(sales_df['date'])
+            print(f"📅 Date column converted to datetime")
+        
         # Фільтрація за датою
         if start_date:
-            sales_df = sales_df[sales_df['date'] >= start_date]
+            start_dt = pd.to_datetime(start_date)
+            sales_df = sales_df[sales_df['date'] >= start_dt]
+            print(f"📅 Filtered by start_date: {start_date}, remaining rows: {len(sales_df)}")
+        
         if end_date:
-            sales_df = sales_df[sales_df['date'] <= end_date]
+            end_dt = pd.to_datetime(end_date)
+            sales_df = sales_df[sales_df['date'] <= end_dt]
+            print(f"📅 Filtered by end_date: {end_date}, remaining rows: {len(sales_df)}")
         
         # Фільтрація за категорією
         if category:
             sales_df = sales_df[sales_df['category'] == category]
+            print(f"📂 Filtered by category: {category}, remaining rows: {len(sales_df)}")
         
         # Фільтрація за регіоном
         if region:
             sales_df = sales_df[sales_df['region'] == region]
+            print(f"🌍 Filtered by region: {region}, remaining rows: {len(sales_df)}")
         
         # Обмеження кількості записів
         sales_df = sales_df.head(limit)
         
-        return sales_df.to_dict('records')
+        # Конвертуємо дату назад в рядок для JSON серіалізації
+        if 'date' in sales_df.columns:
+            sales_df['date'] = sales_df['date'].dt.strftime('%Y-%m-%d')
+        
+        result = sales_df.to_dict('records')
+        print(f"✅ Sales API повертає {len(result)} записів")
+        return result
     
     except Exception as e:
+        print(f"❌ Помилка Sales API: {str(e)}")
+        print(f"❌ Тип помилки: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Помилка при завантаженні даних про продажі: {str(e)}")
 
 
@@ -247,14 +277,21 @@ async def get_trends(
 ):
     """Отримання часових рядів для аналізу трендів"""
     try:
+        print(f"🔍 Trends API запит: start_date={start_date}, end_date={end_date}, period={period}")
+        
         data = load_data()
         trends_data = data["trends"]
+        
+        print(f"📊 Trends data type: {type(trends_data)}, length: {len(trends_data) if hasattr(trends_data, '__len__') else 'N/A'}")
         
         # Якщо це список словників
         if isinstance(trends_data, list):
             trends_df = pd.DataFrame(trends_data)
         else:
             trends_df = trends_data
+        
+        print(f"📈 DataFrame shape: {trends_df.shape}")
+        print(f"📈 DataFrame columns: {list(trends_df.columns)}")
         
         # Конвертуємо дату
         trends_df['date'] = pd.to_datetime(trends_df['date'])
@@ -284,9 +321,15 @@ async def get_trends(
             }).reset_index()
             trends_df['date'] = trends_df['date'].dt.start_time
         
-        return trends_df.to_dict('records')
+        result = trends_df.to_dict('records')
+        print(f"✅ Trends API повертає {len(result)} записів")
+        return result
     
     except Exception as e:
+        print(f"❌ Помилка Trends API: {str(e)}")
+        print(f"❌ Тип помилки: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Помилка при завантаженні трендів: {str(e)}")
 
 
@@ -294,19 +337,32 @@ async def get_trends(
 async def get_stats():
     """Отримання загальної статистики (KPI метрики)"""
     try:
+        print("🔍 Stats API запит")
         data = load_data()
         stats = data["stats"]
         
+        print(f"📊 Stats data type: {type(stats)}")
+        print(f"📊 Stats data length: {len(stats) if hasattr(stats, '__len__') else 'N/A'}")
+        print(f"📊 Stats data content: {stats}")
+        
         # Якщо це список словників, беремо перший
         if isinstance(stats, list) and len(stats) > 0:
-            return stats[0]
+            result = stats[0]
+            print(f"✅ Stats API повертає перший елемент списку: {result}")
+            return result
         # Якщо це словник, повертаємо як є
         elif isinstance(stats, dict):
+            print(f"✅ Stats API повертає словник: {stats}")
             return stats
         else:
+            print(f"⚠️ Stats API повертає порожній об'єкт, тип: {type(stats)}")
             return {}
     
     except Exception as e:
+        print(f"❌ Помилка Stats API: {str(e)}")
+        print(f"❌ Тип помилки: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Помилка при завантаженні статистики: {str(e)}")
 
 
@@ -394,7 +450,7 @@ async def get_file_content(
             raise HTTPException(status_code=404, detail="Файл не знайдено")
         
         # Читаємо CSV файл
-        df = pd.read_csv(filepath)
+        df = pd.read_csv(filepath, encoding='utf-8')
         
         # Застосовуємо пагінацію
         total_rows = len(df)
@@ -423,7 +479,7 @@ async def get_file_stats(filename: str):
         if not os.path.exists(filepath) or not filename.endswith('.csv'):
             raise HTTPException(status_code=404, detail="Файл не знайдено")
         
-        df = pd.read_csv(filepath)
+        df = pd.read_csv(filepath, encoding='utf-8')
         
         stats = {
             "filename": filename,
@@ -865,6 +921,74 @@ async def get_crypto_global():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/yahoo-finance/{symbol}")
+async def get_yahoo_finance_data(symbol: str):
+    """Отримання даних з Yahoo Finance через проксі"""
+    try:
+        import requests
+        
+        # Yahoo Finance API URL
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=1d"
+        
+        # Заголовки для обходу блокування
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+        }
+        
+        print(f"📈 Запит до Yahoo Finance для {symbol}")
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=f"Yahoo Finance API помилка: {response.status_code}")
+        
+        data = response.json()
+        
+        if not data.get('chart') or not data['chart'].get('result') or len(data['chart']['result']) == 0:
+            raise HTTPException(status_code=404, detail="Дані не знайдено")
+        
+        result = data['chart']['result'][0]
+        meta = result['meta']
+        
+        # Обробляємо дані
+        current_price = meta.get('regularMarketPrice', meta.get('previousClose', 0))
+        previous_close = meta.get('previousClose', current_price)
+        change = current_price - previous_close
+        change_percent = (change / previous_close * 100) if previous_close != 0 else 0
+        
+        result_data = {
+            "symbol": symbol,
+            "currentPrice": current_price,
+            "change": change,
+            "changePercent": change_percent,
+            "previousClose": previous_close,
+            "open": meta.get('regularMarketOpen', previous_close),
+            "high": meta.get('regularMarketDayHigh', current_price),
+            "low": meta.get('regularMarketDayLow', current_price),
+            "volume": meta.get('regularMarketVolume', 0),
+            "marketCap": meta.get('marketCap', 0),
+            "currency": meta.get('currency', 'USD'),
+            "exchange": meta.get('exchangeName', ''),
+            "timezone": meta.get('timezone', ''),
+            "lastUpdate": meta.get('regularMarketTime', 0)
+        }
+        
+        print(f"✅ Yahoo Finance дані отримано для {symbol}: ${current_price}")
+        
+        return result_data
+        
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Помилка мережі Yahoo Finance: {str(e)}")
+        raise HTTPException(status_code=503, detail=f"Помилка мережі: {str(e)}")
+    except Exception as e:
+        print(f"❌ Помилка Yahoo Finance API: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Помилка сервера: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
