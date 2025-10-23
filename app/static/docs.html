@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Технічна документація - Економетричний Дашборд</title>
+    <title>Технічна документація - FastAPI Economic Dashboard v1.0.0</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -120,7 +120,7 @@
                 <i class="fas fa-cogs me-3"></i>
                 Технічна документація
             </h1>
-            <p class="lead">Повний опис архітектури та функціональності системи</p>
+            <p class="lead">FastAPI Economic Dashboard v1.0.0 - Повний опис архітектури та функціональності системи</p>
         </div>
     </div>
 
@@ -261,9 +261,12 @@ flowchart TB
             
             <h4>Основні дані:</h4>
             <div class="api-endpoint">GET /api/sales - Дані про продажі</div>
+            <div class="api-endpoint">GET /api/inventory - Дані про запаси</div>
             <div class="api-endpoint">GET /api/profit - Дані про прибуток</div>
             <div class="api-endpoint">GET /api/trends - Трендові дані</div>
             <div class="api-endpoint">GET /api/stats - Загальна статистика</div>
+            <div class="api-endpoint">GET /api/categories - Список категорій продуктів</div>
+            <div class="api-endpoint">GET /api/regions - Список регіонів продажу</div>
             
             <h4>Файли даних:</h4>
             <div class="api-endpoint">GET /api/files - Список файлів</div>
@@ -273,16 +276,24 @@ flowchart TB
             
             <h4>Світовий банк:</h4>
             <div class="api-endpoint">GET /api/worldbank/countries - Список країн</div>
+            <div class="api-endpoint">GET /api/worldbank/indicators-list - Список доступних показників</div>
             <div class="api-endpoint">GET /api/worldbank/indicators - Економічні показники</div>
             <div class="api-endpoint">GET /api/worldbank/normalized - Нормалізовані дані</div>
             <div class="api-endpoint">GET /api/worldbank/economic-health - Аналіз здоров'я</div>
             <div class="api-endpoint">GET /api/worldbank/comparison - Порівняння країн</div>
             <div class="api-endpoint">GET /api/worldbank/trends/{country} - Тренди країни</div>
+            <div class="api-endpoint">GET /api/worldbank/currency-rates - Курси валют</div>
+            <div class="api-endpoint">POST /api/clear-cache - Очищення кешу</div>
 
             <h4>Криптовалюти (CoinGecko):</h4>
             <div class="api-endpoint">GET /api/crypto/markets?currency=usd&per_page=100 - Ринок (топ-100)</div>
             <div class="api-endpoint">GET /api/crypto/coins/{coin_id}/history?currency=usd&days=30 - Історія монети</div>
             <div class="api-endpoint">GET /api/crypto/global - Глобальні метрики (total market cap, BTC dominance)</div>
+            
+            <h4>Системні:</h4>
+            <div class="api-endpoint">GET /api/server-logs - Серверні логи</div>
+            <div class="api-endpoint">GET /docs - Інтерактивна документація API (Swagger UI)</div>
+            <div class="api-endpoint">GET /redoc - Альтернативна документація API</div>
         </div>
 
         <!-- Логічна схема даних -->
@@ -445,6 +456,25 @@ flowchart TD
 ├── render-gunicorn.yaml      # Альтернативна конфігурація
 ├── .renderignore             # Виключення для Render
 └── README.md                 # Документація проєкту</code></pre>
+        </div>
+
+        <!-- Тестування -->
+        <div class="doc-section">
+            <h2><i class="fas fa-vial me-2 text-success"></i>Тестування</h2>
+            
+            <h4>Запуск тестів:</h4>
+            <div class="api-endpoint">python scripts/test_worldbank_client.py - Тестування World Bank API клієнта</div>
+            <div class="api-endpoint">python scripts/test_worldbank_endpoints.py - Тестування ендпоінтів World Bank API</div>
+            <div class="api-endpoint">powershell -ExecutionPolicy Bypass -File scripts/run_wb_tests.ps1 - Запуск всіх тестів</div>
+            
+            <h4>Тестові сценарії:</h4>
+            <ul>
+                <li><strong>API доступність</strong> - перевірка роботи всіх ендпоінтів</li>
+                <li><strong>Валідація даних</strong> - тестування коректності вхідних параметрів</li>
+                <li><strong>Кешування</strong> - перевірка роботи механізмів кешування</li>
+                <li><strong>Fallback</strong> - тестування роботи при недоступності зовнішніх API</li>
+                <li><strong>Обробка помилок</strong> - перевірка коректної обробки помилок</li>
+            </ul>
         </div>
     </div>
 
