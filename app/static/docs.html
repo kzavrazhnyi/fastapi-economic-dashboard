@@ -272,7 +272,6 @@ flowchart TB
             <div class="api-endpoint">GET /api/files - Список файлів</div>
             <div class="api-endpoint">GET /api/files/{filename} - Вміст файлу</div>
             <div class="api-endpoint">GET /api/files/{filename}/stats - Статистика файлу</div>
-            <div class="api-endpoint">POST /api/regenerate - Регенерація даних</div>
             
             <h4>Світовий банк:</h4>
             <div class="api-endpoint">GET /api/worldbank/countries - Список країн</div>
@@ -283,12 +282,14 @@ flowchart TB
             <div class="api-endpoint">GET /api/worldbank/comparison - Порівняння країн</div>
             <div class="api-endpoint">GET /api/worldbank/trends/{country} - Тренди країни</div>
             <div class="api-endpoint">GET /api/worldbank/currency-rates - Курси валют</div>
-            <div class="api-endpoint">POST /api/clear-cache - Очищення кешу</div>
 
             <h4>Криптовалюти (CoinGecko):</h4>
             <div class="api-endpoint">GET /api/crypto/markets?currency=usd&per_page=100 - Ринок (топ-100)</div>
             <div class="api-endpoint">GET /api/crypto/coins/{coin_id}/history?currency=usd&days=30 - Історія монети</div>
             <div class="api-endpoint">GET /api/crypto/global - Глобальні метрики (total market cap, BTC dominance)</div>
+            
+            <h4>Фінансові ринки (Yahoo Finance):</h4>
+            <div class="api-endpoint">GET /api/yahoo-finance/{symbol} - Поточні котирування (AAPL, MSFT, GOOGL, AMZN, TSLA, NVDA, META, BTC-USD, ETH-USD)</div>
             
             <h4>Системні:</h4>
             <div class="api-endpoint">GET /api/server-logs - Серверні логи</div>
@@ -439,23 +440,28 @@ flowchart TD
             <pre><code>fastapi-economic-dashboard/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py                 # FastAPI додаток
-│   ├── models.py              # Pydantic моделі
-│   ├── data_generator.py     # Генератор демо-даних
-│   ├── worldbank_client.py   # Клієнт Світового банку
+│   ├── main.py                  # FastAPI додаток (ендпоінти API)
+│   ├── models.py                # Pydantic моделі
+│   ├── data_generator.py        # Генератор демо-даних
+│   ├── worldbank_client.py      # Клієнт Світового банку
+│   ├── crypto_client.py         # Клієнт CoinGecko
 │   └── static/
-│       ├── index.html         # Веб-інтерфейс
-│       └── docs.html          # Технічна документація
-├── data/                      # CSV файли з даними
-├── venv/                      # Віртуальне середовище
-├── requirements.txt           # Залежності Python
-├── run_server.py             # Скрипт запуску сервера
-├── start_simple.py           # Простий запуск
-├── gunicorn.conf.py          # Конфігурація Gunicorn
-├── render.yaml               # Конфігурація Render
-├── render-gunicorn.yaml      # Альтернативна конфігурація
-├── .renderignore             # Виключення для Render
-└── README.md                 # Документація проєкту</code></pre>
+│       ├── index.html           # Веб-інтерфейс дашборду
+│       └── docs.html            # Технічна документація
+├── data/                        # CSV файли (sales, profit, inventory, trends, stats)
+├── scripts/
+│   ├── run_wb_tests.ps1         # Запуск тестів World Bank
+│   ├── test_worldbank_client.py # Тести для клієнта Світового банку
+│   └── test_worldbank_endpoints.py # Тести для ендпоінтів Світового банку
+├── requirements.txt             # Залежності Python
+├── run_server.py                # Старт для Render
+├── start_simple.py              # Локальний запуск
+├── gunicorn.conf.py             # Конфігурація Gunicorn
+├── render.yaml                  # Конфігурація Render
+├── render-gunicorn.yaml         # Альтернативна конфігурація Render
+├── README.md                    # Опис проєкту
+├── VERSION.md                   # Версія та сумісність
+└── plan/project plan.md         # План проєкту</code></pre>
         </div>
 
         <!-- Тестування -->
